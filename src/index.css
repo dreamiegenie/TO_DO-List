@@ -1,0 +1,96 @@
+@import url('https://fonts.googleapis.com/css2?family=Berkshire+Swash&family=Nunito:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Mali:wght@400;500;600;700&family=Sour+Gummy:wght@400;500;600;700&family=Itim&display=swap');
+
+@import "tailwindcss";
+
+
+
+@theme {
+    --font-heading: "Berkshire Swash", cursive;
+    --font-body: "Nunito", sans-serif;
+    --font-mali: "Mali", cursive;
+    --font-gummy: "Sour Gummy", sans-serif;
+    --font-itim: "Itim", cursive;
+}
+
+body {
+    background: #f7e6ee;
+}
+
+/* 🐱 Kitty breathing */
+.kitty-breathe {
+    transform-box: view-box;
+    transform-origin: 130px 170px;
+    animation: kittyBreathing 2.5s ease-in-out infinite;
+}
+
+@keyframes kittyBreathing {
+    0%, 100% { transform: translateY(0) scaleY(1); }
+    50% { transform: translateY(-3px) scaleY(1.04); }
+}
+
+/* 🎀 Left paw wiggle */
+.kitty-left-paw {
+    transform-box: view-box;
+    transform-origin: 110px 160px;
+    animation: leftPawWiggle 2s ease-in-out infinite;
+}
+
+@keyframes leftPawWiggle {
+    0%, 100% { transform: rotate(0deg); }
+    50% { transform: rotate(-12deg) translateY(-3px); }
+}
+
+/* 🎀 Right paw wiggle */
+.kitty-right-paw {
+    transform-box: view-box;
+    transform-origin: 182px 160px;
+    animation: rightPawWiggle 2.3s ease-in-out infinite;
+}
+
+@keyframes rightPawWiggle {
+    0%, 100% { transform: rotate(0deg); }
+    50% { transform: rotate(12deg) translateY(-3px); }
+}
+
+/* 🌙 Sleepy eyes */
+.kitty-eyes {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: sleepyEyes 5s ease-in-out infinite;
+}
+
+@keyframes sleepyEyes {
+    0%, 40%, 48%, 100% { transform: scaleY(1); }
+    44% { transform: scaleY(0.4); }
+}
+
+/* ✨ Floating Zzz */
+.kitty-zzz {
+    animation: kittyDreaming 3s ease-in-out infinite;
+}
+
+@keyframes kittyDreaming {
+    0% { opacity: 0; transform: translateY(8px); }
+    35% { opacity: 1; }
+    75% { opacity: 0.8; }
+    100% { opacity: 0; transform: translateY(-14px); }
+}
+
+/* 💤 Floating Zzz */
+.nav-kitty { overflow: visible; }
+
+.kitty-zzz {
+    transform-box: view-box;
+    animation: kittyDreaming 3s ease-in-out infinite;
+}
+
+@keyframes kittyDreaming {
+    0% { opacity: 0.4; transform: translateY(5px); }
+    50% { opacity: 1; transform: translateY(-5px); }
+    100% { opacity: 0.4; transform: translateY(-12px); }
+}
+
+
+
+

@@ -1,6 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect} from 'react'
 import './App.css';
-import TODO from './TODO';
 import { SideBar } from './SideBar';
 import { Navigation } from './Navigation';
 import { Greetings } from './Greetings';
@@ -9,27 +8,82 @@ import { TaskSection } from './TaskSection';
 
 
 function App() {
-  
 
 
+    const [todoList, setTodoList] = useState(() => {
+        const saved = localStorage.getItem("todos");
+
+        return saved? JSON.parse(saved) : [];
+    })
 
 
-  return(
-    <>
-        <Navigation/>
-        <div className='grid grid-cols-[1fr_3fr_1fr]'>
-            <SideBar/>
-            <div>
-                <Greetings/>
-                <TaskSection/>
+    useEffect(()=>{
+        localStorage.setItem("todos", JSON.stringify(todoList));
+
+        
+    }, [todoList]);
+
+
+    const [newTasks, setNewTasks] = useState("");
+
+        const removeTask = tasksId => {
+            setTodoList(todoList.filter(taskList => taskList.id !== tasksId))
+        }
+
+        const handleToggle = (idToToggle) => {
+            setTodoList(todoList.map(task => {
+                if(task.id === idToToggle){
+                    return {...task, completed: !task.completed}
+                }
+
+                return task;
+            }))
+        }
+
+        function addTask(newlyAddedTasks){
+            setTodoList([...todoList, newlyAddedTasks]);
+        }
+
+        function handleSubmit(e){
+            e.preventDefault();
+            if(!newTasks.trim()) return;
+
+            const createdAt = new Date();
+
+            const updatedTask = {
+                id: createdAt.getTime(),
+                task: newTasks,
+                completed: false,
+            };
+
+            addTask(updatedTask);
+            setNewTasks("");
+        }
+
+
+    return(
+        <>
+            <Navigation/>
+            <div className='grid grid-cols-[1fr_3fr_1fr]'>
+                <SideBar todoList={todoList}/>
+                <div>
+                    <Greetings/>
+                    <TaskSection
+                        todoList={todoList}
+                        newTasks={newTasks}
+                        setNewTasks={setNewTasks}
+                        removeTask={removeTask}
+                        handleToggle={handleToggle}
+                        handleSubmit={handleSubmit}
+                    />
+                </div>
+                <Widgets todoList={todoList}/>
             </div>
-              <Widgets/>
-            </div>
-            {/* <TODO/> */}
-  
-      
-    </>
-  )
+            
+
+    
+        </>
+            )
 }
 
 export default App

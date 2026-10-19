@@ -1,12 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
-export function FocusTimer() {
+export function FocusTimer({onComplete}) {
 
 
     const initialTime = 25 * 60;
 
     const [isRunning, setIsRunning] = useState(false);
     const [secondsLeft, setSecondsLeft] = useState(initialTime);
+    const completionReported = useRef(false);
 
     const minutes = Math.floor(secondsLeft / 60);
     const seconds = secondsLeft % 60;
@@ -18,15 +19,20 @@ export function FocusTimer() {
             setSecondsLeft(Math.max(secondsLeft - 1, 0));
             if (secondsLeft <= 1) {
                 setIsRunning(false);
+                if (!completionReported.current) {
+                    completionReported.current = true;
+                    onComplete?.();
+                }
             }
         }, 1000);
 
         return () => clearTimeout(timer);
-    }, [isRunning, secondsLeft]);
+    }, [isRunning, secondsLeft, onComplete]);
 
     function handleReset() {
         setIsRunning(false);
         setSecondsLeft(initialTime);
+        completionReported.current = false;
     }
 
     const buttonStyle =
@@ -43,7 +49,7 @@ export function FocusTimer() {
                     {String(seconds).padStart(2, "0")}
                 </p>
 
-                <p className="font-mali text-center text-[10px] leading-3 text-[#A18A98] lg:text-left lg:text-xs lg:leading-4 dark:text-night-muted">
+                <p className="font-mali text-center text-[8px] leading-3 text-[#A18A98] lg:text-left lg:text-xs lg:leading-4 dark:text-night-muted">
                     {secondsLeft === 0
                         ? "Session complete! 🌸"
                         : isRunning
@@ -59,6 +65,7 @@ export function FocusTimer() {
                     className={buttonStyle}
                     onClick={() => {
                         if (secondsLeft === 0) {
+                            completionReported.current = false;
                             setSecondsLeft(initialTime);
                         }
                         setIsRunning(prev => !prev);

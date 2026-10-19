@@ -1,7 +1,7 @@
 import { FocusTimer } from "./FocusTimer";
 
 
-export function Widgets({todoList}) {
+export function Widgets({todoList, onTimerComplete}) {
 
 
     const completedTasks = todoList.filter(todo => todo.completed).length;
@@ -24,7 +24,7 @@ export function Widgets({todoList}) {
                 {/* timer widget */}
                 <div className="@container min-w-0 border border-white shadow bg-[#FCE5EE] rounded-xl p-2 dark:border-night-border dark:bg-night-widget dark:shadow-night-shadow/40"> 
                     <h2 className="text-[#a3637c] font-mali text-sm font-bold lg:text-base dark:text-night-accent">Focus Timer ♡</h2>
-                    <FocusTimer/>
+                    <FocusTimer onComplete={onTimerComplete}/>
                 </div>
 
                 <div className="col-span-2 min-w-0 border border-white shadow bg-[#FCE5EE] rounded-xl p-2 lg:col-span-1 dark:border-night-border dark:bg-night-widget dark:shadow-night-shadow/40">

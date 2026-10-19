@@ -253,7 +253,7 @@ function App() {
                     />
                 </div>
                 <div className='min-w-0'>
-                    <Greetings/>
+                    <Greetings today={today}/>
                     <TaskSection
                         todoList={visibleTasks}
                         today={today}

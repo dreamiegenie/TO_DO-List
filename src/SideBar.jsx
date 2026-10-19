@@ -153,7 +153,7 @@ export function SideBar({
                         setCategoryName(event.target.value);
                         setEditorError("");
                     }} className="block min-h-9 w-full min-w-0 rounded-lg border border-[#d9aabd] bg-white/60 px-2 font-body text-sm text-[#823b56] dark:border-night-control-border dark:bg-night-field dark:text-night-text" />
-                    {editorError && <p id={editorErrorId} role="alert" className="mt-1 font-body text-xs text-[#9D3F62] [overflow-wrap:anywhere] dark:text-night-accent">{editorError}</p>}
+                    {editorError && <p id={editorErrorId} role="alert" className="mt-1 font-body text-xs text-[#9D3F62] wrap-anywhere dark:text-night-accent">{editorError}</p>}
                     <div className="mt-2 flex flex-wrap gap-1.5">
                         <button type="submit" className="min-h-8 cursor-pointer rounded-lg border border-[#D493AE] bg-[#F4A7C1]/35 px-2 font-body text-xs font-semibold text-[#823B56] hover:bg-[#f2b5cc] dark:border-night-control-border dark:bg-night-soft dark:text-night-soft-ink dark:hover:bg-night-hover">Save</button>
                         <button type="button" onClick={closeEditor} className="min-h-8 cursor-pointer rounded-lg px-2 font-body text-xs text-[#A3637C] hover:bg-[#f2b5cc] dark:text-night-muted dark:hover:bg-night-hover">Cancel</button>

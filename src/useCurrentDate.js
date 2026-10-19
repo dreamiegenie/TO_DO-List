@@ -6,24 +6,25 @@ export function useCurrentDate() {
     useEffect(() => {
         let timeout;
 
-        function scheduleMidnight() {
-            const now = new Date();
-            const nextDay = new Date(now);
-            nextDay.setHours(24, 0, 0, 0);
+        function scheduleNextChange(now = new Date()) {
+            const nextChange = new Date(now);
+            const nextHour = now.getHours() < 12 ? 12 : now.getHours() < 18 ? 18 : 24;
+            nextChange.setHours(nextHour, 0, 0, 0);
             timeout = window.setTimeout(() => {
                 setToday(new Date());
-                scheduleMidnight();
-            }, nextDay.getTime() - now.getTime() + 50);
+                scheduleNextChange();
+            }, nextChange.getTime() - now.getTime() + 50);
         }
 
         function refreshDate() {
             if (document.visibilityState === "hidden") return;
             window.clearTimeout(timeout);
-            setToday(new Date());
-            scheduleMidnight();
+            const now = new Date();
+            setToday(now);
+            scheduleNextChange(now);
         }
 
-        scheduleMidnight();
+        timeout = window.setTimeout(refreshDate, 0);
         window.addEventListener("focus", refreshDate);
         document.addEventListener("visibilitychange", refreshDate);
         return () => {

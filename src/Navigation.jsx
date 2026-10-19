@@ -28,7 +28,7 @@ export function Navigation ({isMenuOpen, onToggleMenu, menuButtonRef, searchQuer
                 
 
                 <div className="flex min-w-0 items-center gap-1 lg:gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="100" height="80" viewBox="0 0 260 215" fill="none" aria-hidden="true" className="h-14 w-10 shrink-0 overflow-visible min-[375px]:w-14 lg:h-20 lg:w-[100px]">             
+                        <svg xmlns="http://www.w3.org/2000/svg" width="100" height="80" viewBox="0 0 260 215" fill="none" aria-hidden="true" className="h-14 w-10 shrink-0 overflow-visible min-[375px]:w-14 lg:h-20 lg:w-25">             
                             <ellipse cx="130" cy="174" rx="115" ry="30" fill="#F8B6C1"/>
                             <path d="M25 168Q18 146 45 141Q52 117 86 127Q107 113 129 133Q157 117 179 133Q217 126 225 153Q247 160 235 180Q218 200 173 198H73Q30 197 25 168Z" fill="#FFD1D8" stroke="#F5A5AF" strokeWidth="2.5"/>
                             <path d="M75 148Q69 104 79 48Q83 35 103 51L117 65Q146 55 161 65L186 34Q199 21 205 48L211 102Q227 143 201 161Q183 178 141 178H111Q77 176 75 148Z" className="kitty-breathe" fill="#FFF9F6" stroke="#995F55" strokeWidth="3.5" strokeLinejoin="round"/>
@@ -47,7 +47,7 @@ export function Navigation ({isMenuOpen, onToggleMenu, menuButtonRef, searchQuer
                         </svg>
                 <div className="min-w-0">
                     <h3 className="whitespace-nowrap text-[#684D60] dark:text-night-text font-heading text-[clamp(1.25rem,5.8vw,1.625rem)] text-shadow-2xs sm:text-3xl lg:text-4xl">My To-Dos 
-                            <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 32 32" fill="none" className="inline size-5 lg:size-[26px]"> 
+                            <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 32 32" fill="none" className="inline size-5 lg:size-6.5"> 
                             <path d="M16 28 C12 24 3.5 17.5 3.5 10.5 C3.5 4.5 10.5 3.5 16 11 C21.5 3.5 28.5 4.5 28.5 10.5 C28.5 17.5 20 24 16 28 Z" fill="#FFB9C9" stroke="#F47791" strokeWidth="1.8" strokeLinejoin="round"/>
                             <path d="M9 9 C8 11 8.5 13 9.5 14" stroke="#FFF0F4" strokeWidth="2" strokeLinecap="round" /></svg> </h3>
                     <p className="font-bod whitespace-nowrap text-[#A18A98] dark:text-night-muted text-[10px] flex items-center lg:mx-2.5 lg:text-xs">small steps, big dreams <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 32 32" fill="none" className="inline size-3 shrink-0 lg:size-5"><path d="M16 27 C13.3 24.5 5 18.5 5 12 C5 6.5 12 5.5 16 11 C20 5.5 27 6.5 27 12 C27 18.5 18.7 24.5 16 27 Z" stroke="#af8398" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg></p>
@@ -66,7 +66,7 @@ export function Navigation ({isMenuOpen, onToggleMenu, menuButtonRef, searchQuer
                         onChange={event => onSearchChange(event.target.value)}
                         className="w-full min-w-0 border border-[#F4A7C1] bg-[#FFF0F4] text-[#9a536e] py-2 pl-9 pr-2 rounded-xl focus:outline-none focus:ring-1 lg:w-auto lg:py-1 dark:border-night-control-border dark:bg-night-field dark:text-night-text dark:placeholder:text-night-muted dark:focus:ring-night-primary"/>
                     </div>
-                    <button type="button" onClick={toggleTheme} aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"} aria-pressed={darkMode} className="col-start-3 row-start-1 size-10 shrink-0 hover:-translate-y-1 transition-transform duration-300 lg:mx-4 lg:size-[50px]">
+                    <button type="button" onClick={toggleTheme} aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"} aria-pressed={darkMode} className="col-start-3 row-start-1 size-10 shrink-0 hover:-translate-y-1 transition-transform duration-300 lg:mx-4 lg:size-12.5">
                         { darkMode?  <img src={sun} alt="" width={50}/> :  <img src={moon} alt="" width={50} />}
                         </button>
                 </div>

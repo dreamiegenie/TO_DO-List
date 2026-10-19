@@ -3,6 +3,7 @@ import { getTaskCategoryId, isTaskFromToday } from "./categoryUtils";
 
 export function SideBar({
     todoList,
+    today = new Date(),
     categories = [],
     activeView = { type: "all" },
     onSelectView,
@@ -20,7 +21,7 @@ export function SideBar({
     const editorErrorId = `${editorInputId}-error`;
 
     const completedTasks = todoList.filter(todo => todo.completed).length;
-    const todayTasks = todoList.filter(task => isTaskFromToday(task)).length;
+    const todayTasks = todoList.filter(task => isTaskFromToday(task, today)).length;
     const categoryCounts = new Map(categories.map(category => [category.id, 0]));
     let uncategorizedTasks = 0;
 

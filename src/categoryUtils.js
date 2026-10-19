@@ -1,3 +1,5 @@
+import { getTaskCreatedAt, isSameCalendarDay } from "./taskDates.js";
+
 export function normalizeCategoryName(name) {
     return name.trim().replace(/\s+/g, ' ');
 }
@@ -26,11 +28,6 @@ export function getTaskCategoryId(task, categories) {
 }
 
 export function isTaskFromToday(task, today = new Date()) {
-    let createdAt = task.createdAt == null || task.createdAt === '' ? new Date(NaN) : new Date(task.createdAt);
-    // Earlier tasks store their creation time in their numeric id.
-    if (Number.isNaN(createdAt.getTime()) && typeof task.id === 'number') createdAt = new Date(task.id);
-    return !Number.isNaN(createdAt.getTime()) &&
-        createdAt.getFullYear() === today.getFullYear() &&
-        createdAt.getMonth() === today.getMonth() &&
-        createdAt.getDate() === today.getDate();
+    const createdAt = getTaskCreatedAt(task);
+    return createdAt !== null && isSameCalendarDay(createdAt, today);
 }

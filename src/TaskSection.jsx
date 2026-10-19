@@ -1,15 +1,8 @@
-function getTaskTimestamp(todo) {
-    if (todo.timestamp) return todo.timestamp;
-    if (typeof todo.id !== "number" || !Number.isFinite(todo.id)) return "";
-
-    const createdAt = new Date(todo.id);
-    if (Number.isNaN(createdAt.getTime())) return "";
-
-    return createdAt.toLocaleTimeString([], {hour: "2-digit", minute: "2-digit"});
-}
+import { formatTaskTimestamp } from "./taskDates";
 
 export function TaskSection({
     todoList,
+    today = new Date(),
     isSearching,
     newTasks,
     setNewTasks,
@@ -31,7 +24,7 @@ export function TaskSection({
                     <input type="checkbox" aria-label={`Mark ${todo.task} as ${todo.completed ? 'incomplete' : 'complete'}`} checked={todo.completed} onChange={() => handleToggle(todo.id)} className="w-6 h-6 shrink-0 rounded-full appearance-none border-2 border-[#DAA3B8] bg-white dark:bg-night-field dark:border-night-control-border dark:checked:bg-night-primary dark:checked:border-night-primary dark:checked:after:text-night-primary-ink checked:bg-[#F4A4C3] checked:border-[#F4A4C3] cursor-pointer transition-all duration-300 checked:after:content-['✓'] checked:after:text-white checked:after:flex checked:after:justify-center checked:after:items-center checked:after:text-sm"/>
                     <div className="min-w-0 flex-1">
                         <span style={{textDecoration: todo.completed? "line-through ": "none" }} className="block min-w-0 text-xs [overflow-wrap:anywhere] font-gummy text-[#a8637c] dark:text-night-text min-[375px]:text-sm lg:text-base">{todo.task}</span>
-                        <span className="mt-0.5 block text-[10px] font-itim text-[#eeb9cc] dark:text-night-muted min-[375px]:text-xs lg:hidden">{getTaskTimestamp(todo)}</span>
+                        <span className="mt-0.5 block text-[10px] font-itim text-[#eeb9cc] dark:text-night-muted min-[375px]:text-xs lg:hidden">{formatTaskTimestamp(todo, today)}</span>
                     </div>
                 </div>
             
@@ -46,7 +39,7 @@ export function TaskSection({
                 <span className="font-body text-xs capitalize lg:text-base lg:font-bold lg:normal-case">remove</span>
             </button>
             </div>
-                <span className="hidden text-[#eeb9cc] dark:text-night-muted text-xs font-itim lg:inline lg:px-12">{getTaskTimestamp(todo)}</span>
+                <span className="hidden text-[#eeb9cc] dark:text-night-muted text-xs font-itim lg:inline lg:px-12">{formatTaskTimestamp(todo, today)}</span>
         </li>
         
         

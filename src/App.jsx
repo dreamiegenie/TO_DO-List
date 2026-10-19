@@ -5,10 +5,12 @@ import { Greetings } from './Greetings';
 import { Widgets } from './Widgets';
 import { TaskSection } from './TaskSection';
 import { Toast } from './Toast';
+import { useCurrentDate } from './useCurrentDate';
 import { getTaskCategoryId, isTaskFromToday, normalizeCategoryName, readSavedCategories } from './categoryUtils';
 
 
 function App() {
+    const today = useCurrentDate();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const [categories, setCategories] = useState(readSavedCategories);
@@ -193,7 +195,7 @@ function App() {
     const viewTitle = viewedCategory?.name ?? ({ all: 'Your tasks', today: 'Today', completed: 'Completed', uncategorized: 'Uncategorized' }[activeView.type] ?? 'Your tasks');
     const hasActiveFilters = activeView.type !== 'all' || Boolean(searchQuery.trim());
     const visibleTasks = todoList.filter(todo => {
-        if (activeView.type === 'today' && !isTaskFromToday(todo)) return false;
+        if (activeView.type === 'today' && !isTaskFromToday(todo, today)) return false;
         if (activeView.type === 'completed' && !todo.completed) return false;
         if (activeView.type === 'category' && getTaskCategoryId(todo, categories) !== activeView.categoryId) return false;
         if (activeView.type === 'uncategorized' && getTaskCategoryId(todo, categories)) return false;
@@ -220,6 +222,7 @@ function App() {
                 <div ref={sidebarRef} id="task-navigation" className={`${isMenuOpen ? 'block' : 'hidden'} min-w-0 lg:block`}>
                     <SideBar
                         todoList={todoList}
+                        today={today}
                         categories={categories}
                         activeView={activeView}
                         onSelectView={selectView}
@@ -232,6 +235,7 @@ function App() {
                     <Greetings/>
                     <TaskSection
                         todoList={visibleTasks}
+                        today={today}
                         isSearching={Boolean(searchQuery.trim())}
                         newTasks={newTasks}
                         setNewTasks={setNewTasks}

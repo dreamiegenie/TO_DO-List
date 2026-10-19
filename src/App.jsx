@@ -64,9 +64,11 @@ function App() {
     return(
         <>
             <Navigation/>
-            <div className='grid grid-cols-[1fr_3fr_1fr]'>
-                <SideBar todoList={todoList}/>
-                <div>
+            <div className='grid grid-cols-1 gap-4 lg:grid-cols-[1fr_3fr_1fr] lg:gap-0'>
+                <div className='hidden lg:block'>
+                    <SideBar todoList={todoList}/>
+                </div>
+                <div className='min-w-0'>
                     <Greetings/>
                     <TaskSection
                         todoList={todoList}

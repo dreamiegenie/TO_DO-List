@@ -1,27 +1,69 @@
 
 
-export function TaskSection() {
+function getTaskTimestamp(todo) {
+    if (todo.timestamp) return todo.timestamp;
+    if (typeof todo.id !== "number" || !Number.isFinite(todo.id)) return "";
+
+    const createdAt = new Date(todo.id);
+    if (Number.isNaN(createdAt.getTime())) return "";
+
+    return createdAt.toLocaleTimeString([], {hour: "2-digit", minute: "2-digit"});
+}
+
+export function TaskSection({todoList, newTasks,setNewTasks,handleSubmit,removeTask,handleToggle}) {
+
+    const listItems = todoList.map(todo => (
+        
+        <li key={todo.id} className="bg-white rounded-3xl p-2 pt-4 border border-[#d392a7c7] shadow-xxs mb-2">
+            <div className="flex justify-between items-center mx-4">
+                <div className="flex items-center gap-2">
+                    <input type="checkbox" checked={todo.completed} onChange={() => handleToggle(todo.id)} className="w-6 h-6 rounded-full appearance-none border-2 border-[#DAA3B8] bg-white checked:bg-[#F4A4C3] checked:border-[#F4A4C3] cursor-pointer transition-all duration-300 checked:after:content-['✓'] checked:after:text-white checked:after:flex checked:after:justify-center checked:after:items-center checked:after:text-sm"/>
+                    <span style={{textDecoration: todo.completed? "line-through ": "none" }} className="font-gummy text-[#a8637c]">{todo.task}</span>
+                </div>
+            
+            <button type="button" onClick={() => removeTask(todo.id)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#FFF0F5] border border-[#F6C3D5] text-[#C17694] hover:bg-[#FFE3EE] hover:shadow-sm transition-all duration-200">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 64 64" fill="none">
+                <path d="M24 12C24 9.8 25.8 8 28 8H36C38.2 8 40 9.8 40 12V14H47C48.7 14 50 15.3 50 17C50 18.7 48.7 20 47 20H17C15.3 20 14 18.7 14 17C14 15.3 15.3 14 17 14H24V12Z" fill="#F8BFD2" stroke="#C97C9A" strokeWidth="2.2" strokeLinejoin="round"/>
+                <path d="M20 22H44L42 49C41.8 52 39.3 54.4 36.3 54.4H27.7C24.7 54.4 22.2 52 22 49L20 22Z" fill="#FFDCE8" stroke="#C97C9A" strokeWidth="2.2" strokeLinejoin="round"/>
+                <path d="M27 28V45M32 28V45M37 28V45" stroke="#E89AB7" strokeWidth="2.4" strokeLinecap="round"/>
+                <path d="M32 39C29.8 36.8 26.5 35.6 26.5 32.5C26.5 30.4 28.1 29 30.1 29C31.3 29 32 29.6 32 29.6C32 29.6 32.7 29 33.9 29C35.9 29 37.5 30.4 37.5 32.5C37.5 35.6 34.2 36.8 32 39Z" fill="#F7A9C4"/>
+                </svg>
+                <span className="font-bold font-body">remove</span>
+            </button>
+            </div>
+                <span className="text-[#eeb9cc] text-xs font-itim px-12">{getTaskTimestamp(todo)}</span>
+        </li>
+        
+        
+    )); 
 
 
     return(
         <>
             <div className="rounded-2xl bg-white/40 m-4 p-6">
+                <form onSubmit={handleSubmit}>
                     <div className="flex items-center gap-4">
                         <div className="relative">
                             <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" className="absolute left-3 top-1/2 -translate-y-1/2    AS" viewBox="0 0 24 24"><title>circle-plus-duotone</title>
                             <g fill="none" stroke="#a3637c" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path fill="#F4A7C1" fill-opacity=".4" 
                             d="M23 12C23 18.0751 18.0751 23 12 23C5.92487 23 1 18.0751 1 12C1 5.92487 5.92487 1 12 1C18.0751 1 23 5.92487 23 12Z" 
                             stroke="none"/><path d="M8 12H16M11.995 16.005V8.005"/></g></svg>
-                            <input type="text" className="min-w-2xl border border-[#f4c3d4] rounded-2xl  py-1 pl-9 pr-2 font-gummy text-[#a3637c] focus:outline-none focus:ring-0" placeholder="Add a new task..." />
+                            <input type="text" value={newTasks} onChange={(e)=> setNewTasks(e.target.value)}  className="min-w-2xl border border-[#f4c3d4] rounded-2xl  py-1 pl-9 pr-2 font-gummy text-[#a3637c] focus:outline-none focus:ring-0 shadow-2xs"  placeholder="Add a new task..." />
                         </div>
-                                <button className="flex items-center gap-2 bg-[#F4A7C1] text-[#9d5e79]  rounded-2xl p-1 px-4 font-mali shadow-xs border border-[#a3637c] cursor-pointer hover:bg-[#bc7c95] hover:text-white/70 hover:-translate-y-0.5 transition-all duration-200 ">Add 
+                                <button type="submit" className="flex items-center gap-2 bg-[#F4A7C1] text-[#9d5e79]  rounded-2xl p-1 px-4 font-mali shadow-xs border border-[#a3637c] cursor-pointer hover:bg-[#d17699] hover:text-white hover:-translate-y-0.5 transition-all duration-200 ">Add 
                                     <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><title>stars-duotone</title>
                                     <path fill="#fff" d="M7.846 8.822c.427-1.027 1.881-1.027 2.308 0l1.214 2.919l3.151.252c1.108.09 1.558 1.472.713 2.195l-2.4 2.057l.733 3.075c.258 1.081-.918 1.936-1.867 1.357L9 19.029l-2.698 1.648c-.949.58-2.125-.276-1.867-1.357l.733-3.075l-2.4-2.057c-.845-.723-.395-2.106.713-2.195l3.15-.252zM9 9.953l-1.042 2.505a1.25 1.25 0 0 1-1.054.766L4.2 13.44l2.06 1.765c.356.305.512.784.403 1.24l-.63 2.638l2.315-1.414a1.25 1.25 0 0 1 1.304 0l2.315 1.414l-.63-2.638a1.25 1.25 0 0 1 .403-1.24l2.06-1.765l-2.704-.216a1.25 1.25 0 0 1-1.054-.766z"/>
                                     <path fill="#fff" d="M13.538 3.11a.5.5 0 0 1 .923 0l.48 1.152a.5.5 0 0 0 .421.306l1.244.1a.5.5 0 0 1 .285.878l-.947.812a.5.5 0 0 0-.162.495l.29 1.214a.5.5 0 0 1-.747.542l-1.065-.65a.5.5 0 0 0-.52 0l-1.065.65a.5.5 0 0 1-.747-.542l.289-1.214a.5.5 0 0 0-.161-.495l-.947-.812a.5.5 0 0 1 .285-.878l1.243-.1a.5.5 0 0 0 .422-.306zm5.009 6.86a.5.5 0 0 1 .906 0l.425.91a.5.5 0 0 0 .241.242l.91.425a.5.5 0 0 1 0 .906l-.91.425a.5.5 0 0 0-.241.241l-.425.91a.5.5 0 0 1-.906 0l-.425-.91a.5.5 0 0 0-.242-.241l-.91-.425a.5.5 0 0 1 0-.906l.91-.425a.5.5 0 0 0 .242-.241z" opacity=".5"/></svg>
                                 </button>
                     </div>
+                </form>
 
-
+                <div className="mt-10">
+                    <ul>
+                        {todoList.length === 0? <div className="font-bold text-[#a3637c] text-center mt-10 font-body"> Task is empty! Add task above. </div> : listItems}
+                    </ul>
+                </div>
             </div>
         </>
     )

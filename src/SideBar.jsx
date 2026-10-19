@@ -3,6 +3,7 @@ import { getTaskCategoryId, isTaskFromToday } from "./categoryUtils";
 
 export function SideBar({
     todoList,
+    deletedCount = 0,
     today = new Date(),
     categories = [],
     activeView = { type: "all" },
@@ -164,6 +165,13 @@ export function SideBar({
                 <button type="button" aria-pressed={activeView.type === "uncategorized"} onClick={() => onSelectView({ type: "uncategorized" })} className={filterButtonClass(activeView.type === "uncategorized")}>
                     <span className="min-w-0 truncate">Uncategorized</span>
                     <span className="shrink-0 font-mali dark:text-night-accent">{uncategorizedTasks}</span>
+                </button>
+                <button type="button" aria-label={`Deleted Tasks, ${deletedCount} deleted tasks`} title="Deleted Tasks" aria-pressed={activeView.type === "deleted"} onClick={() => onSelectView({ type: "deleted" })} className={filterButtonClass(activeView.type === "deleted")}>
+                    <span className="flex min-w-0 items-center gap-1">
+                        <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="size-3.5 shrink-0"><path d="M3 6h14M7 6V3h6v3M5 6l1 11h8l1-11M8 9v5M12 9v5" /></svg>
+                        <span className="min-w-0 truncate">Deleted Tasks</span>
+                    </span>
+                    <span className="shrink-0 font-mali dark:text-night-accent">{deletedCount}</span>
                 </button>
                 {categories.map(category => (
                     <div key={category.id} className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-0.5">

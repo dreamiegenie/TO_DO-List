@@ -90,14 +90,29 @@ function App() {
     const [newTasks, setNewTasks] = useState("");
 
         const removeTask = tasksId => {
-            if (!todoList.some(task => task.id === tasksId)) return;
-            setTodoList(current => current.filter(task => task.id !== tasksId));
-            showToast('delete', 'Task deleted ♡');
+            if (!todoList.some(task => task.id === tasksId && !task.deletedAt)) return;
+            const deletedAt = new Date().toISOString();
+            setTodoList(current => current.map(task =>
+                task.id === tasksId && !task.deletedAt ? { ...task, deletedAt } : task));
+            showToast('delete', 'Task moved to Deleted Tasks ♡');
+            window.requestAnimationFrame(() => taskHeadingRef.current?.focus({ preventScroll: true }));
+        }
+
+        const restoreTask = tasksId => {
+            if (!todoList.some(task => task.id === tasksId && task.deletedAt)) return;
+            setTodoList(current => current.map(task => {
+                if (task.id !== tasksId || !task.deletedAt) return task;
+                const restoredTask = { ...task };
+                delete restoredTask.deletedAt;
+                return restoredTask;
+            }));
+            showToast('add', 'Task restored ♡');
+            window.requestAnimationFrame(() => taskHeadingRef.current?.focus({ preventScroll: true }));
         }
 
         const handleToggle = (idToToggle) => {
             setTodoList(current => current.map(task => {
-                if(task.id === idToToggle){
+                if(task.id === idToToggle && !task.deletedAt){
                     return {...task, completed: !task.completed}
                 }
 
@@ -126,7 +141,7 @@ function App() {
 
             addTask(updatedTask);
             setNewTasks("");
-            if (activeView.type === 'completed') setActiveView({ type: 'all' });
+            if (activeView.type === 'completed' || activeView.type === 'deleted') setActiveView({ type: 'all' });
             else if ((activeView.type === 'category' && activeView.categoryId !== updatedTask.categoryId) ||
                 (activeView.type === 'uncategorized' && updatedTask.categoryId)) {
                 setActiveView(updatedTask.categoryId ? { type: 'category', categoryId: updatedTask.categoryId } : { type: 'uncategorized' });
@@ -146,6 +161,7 @@ function App() {
         const name = normalizeCategoryName(rawName);
         if (!name) return { ok: false, error: 'Enter a category name.' };
         if (name.toLowerCase() === 'uncategorized') return { ok: false, error: 'Uncategorized is reserved for tasks without a category.' };
+        if (name.toLowerCase() === 'deleted tasks') return { ok: false, error: 'Deleted Tasks is reserved for removed tasks.' };
         if (name.length > 40) return { ok: false, error: 'Use 40 characters or fewer.' };
         if (categories.some(category => category.id !== exceptId && category.name.toLowerCase() === name.toLowerCase())) {
             return { ok: false, error: 'A category with this name already exists.' };
@@ -191,17 +207,21 @@ function App() {
         setSearchQuery('');
     }
 
+    const activeTasks = todoList.filter(task => !task.deletedAt);
+    const deletedTasks = todoList.filter(task => task.deletedAt);
+    const isDeletedView = activeView.type === 'deleted';
     const viewedCategory = activeView.type === 'category' ? categories.find(category => category.id === activeView.categoryId) : null;
-    const viewTitle = viewedCategory?.name ?? ({ all: 'Your tasks', today: 'Today', completed: 'Completed', uncategorized: 'Uncategorized' }[activeView.type] ?? 'Your tasks');
+    const viewTitle = viewedCategory?.name ?? ({ all: 'Your tasks', today: 'Today', completed: 'Completed', uncategorized: 'Uncategorized', deleted: 'Deleted Tasks' }[activeView.type] ?? 'Your tasks');
     const hasActiveFilters = activeView.type !== 'all' || Boolean(searchQuery.trim());
-    const visibleTasks = todoList.filter(todo => {
+    const visibleTasks = (isDeletedView ? deletedTasks : activeTasks).filter(todo => {
         if (activeView.type === 'today' && !isTaskFromToday(todo, today)) return false;
         if (activeView.type === 'completed' && !todo.completed) return false;
         if (activeView.type === 'category' && getTaskCategoryId(todo, categories) !== activeView.categoryId) return false;
         if (activeView.type === 'uncategorized' && getTaskCategoryId(todo, categories)) return false;
         return todo.task.toLowerCase().includes(searchQuery.trim().toLowerCase());
     });
-    const emptyMessage = searchQuery.trim() ? 'No tasks match your search.' :
+    const emptyMessage = searchQuery.trim() ? (isDeletedView ? 'No deleted tasks match your search.' : 'No tasks match your search.') :
+        isDeletedView ? 'No deleted tasks yet.' :
         viewedCategory ? `No tasks in ${viewedCategory.name} yet.` :
         activeView.type === 'today' ? 'No tasks added today.' :
         activeView.type === 'completed' ? 'No completed tasks yet.' :
@@ -221,7 +241,8 @@ function App() {
             <div className='grid grid-cols-1 gap-0 lg:grid-cols-[minmax(0,1fr)_minmax(0,3fr)_minmax(0,1fr)]'>
                 <div ref={sidebarRef} id="task-navigation" className={`${isMenuOpen ? 'block' : 'hidden'} min-w-0 lg:block`}>
                     <SideBar
-                        todoList={todoList}
+                        todoList={activeTasks}
+                        deletedCount={deletedTasks.length}
                         today={today}
                         categories={categories}
                         activeView={activeView}
@@ -240,6 +261,8 @@ function App() {
                         newTasks={newTasks}
                         setNewTasks={setNewTasks}
                         removeTask={removeTask}
+                        restoreTask={restoreTask}
+                        isDeletedView={isDeletedView}
                         handleToggle={handleToggle}
                         handleSubmit={handleSubmit}
                         viewTitle={viewTitle}
@@ -249,7 +272,7 @@ function App() {
                         headingRef={taskHeadingRef}
                     />
                 </div>
-                <Widgets todoList={todoList} onTimerComplete={handleTimerComplete}/>
+                <Widgets todoList={activeTasks} onTimerComplete={handleTimerComplete}/>
             </div>
             
 

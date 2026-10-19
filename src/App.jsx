@@ -5,11 +5,16 @@ import { Greetings } from './Greetings';
 import { Widgets } from './Widgets';
 import { TaskSection } from './TaskSection';
 import { Toast } from './Toast';
+import { getTaskCategoryId, isTaskFromToday, normalizeCategoryName, readSavedCategories } from './categoryUtils';
 
 
 function App() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
+    const [categories, setCategories] = useState(readSavedCategories);
+    const [activeView, setActiveView] = useState({ type: 'all' });
+    const [newTaskCategoryId, setNewTaskCategoryId] = useState('');
+    const taskHeadingRef = useRef(null);
     const menuButtonRef = useRef(null);
     const sidebarRef = useRef(null);
     const [toasts, setToasts] = useState([]);
@@ -71,6 +76,14 @@ function App() {
         
     }, [todoList]);
 
+    useEffect(() => {
+        try {
+            localStorage.setItem('todoCategories', JSON.stringify(categories));
+        } catch {
+            // Categories remain usable for this visit when saving is unavailable.
+        }
+    }, [categories]);
+
 
     const [newTasks, setNewTasks] = useState("");
 
@@ -81,7 +94,7 @@ function App() {
         }
 
         const handleToggle = (idToToggle) => {
-            setTodoList(todoList.map(task => {
+            setTodoList(current => current.map(task => {
                 if(task.id === idToToggle){
                     return {...task, completed: !task.completed}
                 }
@@ -103,18 +116,104 @@ function App() {
 
             const updatedTask = {
                 id: createdAt.getTime(),
+                createdAt: createdAt.toISOString(),
                 task: newTasks,
                 completed: false,
+                categoryId: categories.some(category => category.id === newTaskCategoryId) ? newTaskCategoryId : null,
             };
 
             addTask(updatedTask);
             setNewTasks("");
+            if (activeView.type === 'completed') setActiveView({ type: 'all' });
+            else if ((activeView.type === 'category' && activeView.categoryId !== updatedTask.categoryId) ||
+                (activeView.type === 'uncategorized' && updatedTask.categoryId)) {
+                setActiveView(updatedTask.categoryId ? { type: 'category', categoryId: updatedTask.categoryId } : { type: 'uncategorized' });
+            }
         }
 
+    function selectView(view) {
+        setActiveView(view);
+        setNewTaskCategoryId(view.type === 'category' ? view.categoryId : '');
+        if (isMenuOpen) {
+            setIsMenuOpen(false);
+            window.requestAnimationFrame(() => taskHeadingRef.current?.focus());
+        }
+    }
 
-    const visibleTasks = todoList.filter(todo =>
-        todo.task.toLowerCase().includes(searchQuery.trim().toLowerCase())
-    );
+    function validateCategoryName(rawName, exceptId) {
+        const name = normalizeCategoryName(rawName);
+        if (!name) return { ok: false, error: 'Enter a category name.' };
+        if (name.toLowerCase() === 'uncategorized') return { ok: false, error: 'Uncategorized is reserved for tasks without a category.' };
+        if (name.length > 40) return { ok: false, error: 'Use 40 characters or fewer.' };
+        if (categories.some(category => category.id !== exceptId && category.name.toLowerCase() === name.toLowerCase())) {
+            return { ok: false, error: 'A category with this name already exists.' };
+        }
+        return { ok: true, name };
+    }
+
+    function createCategory(rawName) {
+        const result = validateCategoryName(rawName);
+        if (!result.ok) return result;
+        const category = { id: crypto.randomUUID(), name: result.name };
+        setCategories(current => [...current, category]);
+        setActiveView({ type: 'category', categoryId: category.id });
+        setNewTaskCategoryId(category.id);
+        showToast('add', 'Category added ♡');
+        return { ok: true, id: category.id };
+    }
+
+    function renameCategory(id, rawName) {
+        const category = categories.find(item => item.id === id);
+        if (!category) return { ok: false, error: 'This category is no longer available.' };
+        const result = validateCategoryName(rawName, id);
+        if (!result.ok) return result;
+        if (category.name !== result.name) {
+            setCategories(current => current.map(item => item.id === id ? { ...item, name: result.name } : item));
+            showToast('add', 'Category updated ♡');
+        }
+        return { ok: true };
+    }
+
+    function deleteCategory(id) {
+        if (!categories.some(category => category.id === id)) return false;
+        setCategories(current => current.filter(category => category.id !== id));
+        setTodoList(current => current.map(task => task.categoryId === id ? { ...task, categoryId: null } : task));
+        if (activeView.type === 'category' && activeView.categoryId === id) setActiveView({ type: 'all' });
+        if (newTaskCategoryId === id) setNewTaskCategoryId('');
+        showToast('delete', 'Category deleted. Tasks kept in Uncategorized ♡');
+        return true;
+    }
+
+    function assignTaskCategory(taskId, categoryId) {
+        if (categoryId && !categories.some(category => category.id === categoryId)) return;
+        setTodoList(current => current.map(task => task.id === taskId ? { ...task, categoryId: categoryId || null } : task));
+        if ((activeView.type === 'category' && activeView.categoryId !== categoryId) ||
+            (activeView.type === 'uncategorized' && categoryId)) {
+            window.requestAnimationFrame(() => taskHeadingRef.current?.focus({ preventScroll: true }));
+        }
+    }
+
+    function clearFilters() {
+        selectView({ type: 'all' });
+        setSearchQuery('');
+    }
+
+    const viewedCategory = activeView.type === 'category' ? categories.find(category => category.id === activeView.categoryId) : null;
+    const viewTitle = viewedCategory?.name ?? ({ all: 'Your tasks', today: 'Today', completed: 'Completed', uncategorized: 'Uncategorized' }[activeView.type] ?? 'Your tasks');
+    const hasActiveFilters = activeView.type !== 'all' || Boolean(searchQuery.trim());
+    const visibleTasks = todoList.filter(todo => {
+        if (activeView.type === 'today' && !isTaskFromToday(todo)) return false;
+        if (activeView.type === 'completed' && !todo.completed) return false;
+        if (activeView.type === 'category' && getTaskCategoryId(todo, categories) !== activeView.categoryId) return false;
+        if (activeView.type === 'uncategorized' && getTaskCategoryId(todo, categories)) return false;
+        return todo.task.toLowerCase().includes(searchQuery.trim().toLowerCase());
+    });
+    const emptyMessage = searchQuery.trim() ? 'No tasks match your search.' :
+        viewedCategory ? `No tasks in ${viewedCategory.name} yet.` :
+        activeView.type === 'today' ? 'No tasks added today.' :
+        activeView.type === 'completed' ? 'No completed tasks yet.' :
+        activeView.type === 'uncategorized' ? 'No uncategorized tasks.' :
+        'Task is empty! Add task above.';
 
     return(
         <>
@@ -128,7 +227,15 @@ function App() {
             />
             <div className='grid grid-cols-1 gap-0 lg:grid-cols-[minmax(0,1fr)_minmax(0,3fr)_minmax(0,1fr)]'>
                 <div ref={sidebarRef} id="task-navigation" className={`${isMenuOpen ? 'block' : 'hidden'} min-w-0 lg:block`}>
-                    <SideBar todoList={todoList}/>
+                    <SideBar
+                        todoList={todoList}
+                        categories={categories}
+                        activeView={activeView}
+                        onSelectView={selectView}
+                        onCreateCategory={createCategory}
+                        onRenameCategory={renameCategory}
+                        onDeleteCategory={deleteCategory}
+                    />
                 </div>
                 <div className='min-w-0'>
                     <Greetings/>
@@ -140,6 +247,15 @@ function App() {
                         removeTask={removeTask}
                         handleToggle={handleToggle}
                         handleSubmit={handleSubmit}
+                        categories={categories}
+                        newTaskCategoryId={newTaskCategoryId}
+                        setNewTaskCategoryId={setNewTaskCategoryId}
+                        onTaskCategoryChange={assignTaskCategory}
+                        viewTitle={viewTitle}
+                        emptyMessage={emptyMessage}
+                        hasActiveFilters={hasActiveFilters}
+                        onClearFilters={clearFilters}
+                        headingRef={taskHeadingRef}
                     />
                 </div>
                 <Widgets todoList={todoList} onTimerComplete={handleTimerComplete}/>

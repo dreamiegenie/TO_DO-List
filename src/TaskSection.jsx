@@ -1,4 +1,20 @@
+import { getTaskCategoryId } from "./categoryUtils";
 
+function CategorySelect({ categories, value, onChange, label, compact = false }) {
+    return (
+        <select
+            aria-label={label}
+            value={value ?? ""}
+            onChange={event => onChange?.(event.target.value)}
+            className={`block w-full min-w-0 truncate rounded-lg border border-[#f4c3d4] bg-[#FFF0F4] text-[#a3637c] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#A85F80] dark:border-night-control-border dark:bg-night-field dark:text-night-text dark:focus-visible:outline-night-primary ${compact ? "min-h-7 max-w-48 px-1 py-1 font-gummy text-[10px] min-[375px]:text-xs" : "min-h-10 px-2 py-2 font-body text-sm"}`}
+        >
+            <option value="">Uncategorized</option>
+            {categories.map(category => (
+                <option key={category.id} value={category.id}>{category.name}</option>
+            ))}
+        </select>
+    );
+}
 
 function getTaskTimestamp(todo) {
     if (todo.timestamp) return todo.timestamp;
@@ -10,7 +26,24 @@ function getTaskTimestamp(todo) {
     return createdAt.toLocaleTimeString([], {hour: "2-digit", minute: "2-digit"});
 }
 
-export function TaskSection({todoList, isSearching, newTasks,setNewTasks,handleSubmit,removeTask,handleToggle}) {
+export function TaskSection({
+    todoList,
+    isSearching,
+    newTasks,
+    setNewTasks,
+    handleSubmit,
+    removeTask,
+    handleToggle,
+    categories = [],
+    newTaskCategoryId = "",
+    setNewTaskCategoryId,
+    onTaskCategoryChange,
+    viewTitle = "Tasks",
+    emptyMessage,
+    hasActiveFilters = false,
+    onClearFilters,
+    headingRef,
+}) {
 
     const listItems = todoList.map(todo => (
         
@@ -21,6 +54,15 @@ export function TaskSection({todoList, isSearching, newTasks,setNewTasks,handleS
                     <div className="min-w-0 flex-1">
                         <span style={{textDecoration: todo.completed? "line-through ": "none" }} className="block min-w-0 text-xs [overflow-wrap:anywhere] font-gummy text-[#a8637c] dark:text-night-text min-[375px]:text-sm lg:text-base">{todo.task}</span>
                         <span className="mt-0.5 block text-[10px] font-itim text-[#eeb9cc] dark:text-night-muted min-[375px]:text-xs lg:hidden">{getTaskTimestamp(todo)}</span>
+                        <div className="mt-1 min-w-0">
+                            <CategorySelect
+                                categories={categories}
+                                value={getTaskCategoryId(todo, categories)}
+                                onChange={categoryId => onTaskCategoryChange?.(todo.id, categoryId)}
+                                label={`Category for ${todo.task}`}
+                                compact
+                            />
+                        </div>
                     </div>
                 </div>
             
@@ -45,6 +87,15 @@ export function TaskSection({todoList, isSearching, newTasks,setNewTasks,handleS
     return(
         <>
             <div className="min-w-0 rounded-2xl bg-white/40 dark:bg-night-panel mx-4 mt-2 mb-0 p-2 sm:p-4 lg:m-4 lg:p-6">
+                <div className="mb-3 flex min-w-0 items-start justify-between gap-2">
+                    <h2 ref={headingRef} tabIndex={-1} className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1 rounded-lg font-mali text-sm font-bold text-[#a3637c] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#A85F80] dark:text-night-accent dark:focus-visible:outline-night-primary lg:text-lg">
+                        <span className="min-w-0 [overflow-wrap:anywhere]">{viewTitle}</span>
+                        <span className="shrink-0 rounded-full bg-[#FFF0F5] px-2 py-0.5 font-body text-xs dark:bg-night-soft dark:text-night-soft-ink" aria-label={`${todoList.length} visible ${todoList.length === 1 ? "task" : "tasks"}`}>{todoList.length}</span>
+                    </h2>
+                    {hasActiveFilters && (
+                        <button type="button" onClick={onClearFilters} className="min-h-9 shrink-0 cursor-pointer rounded-full border border-[#F6C3D5] bg-[#FFF0F5] px-3 py-1 font-body text-xs font-semibold text-[#C17694] transition-colors hover:bg-[#FFE3EE] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#A85F80] dark:border-night-control-border dark:bg-night-soft dark:text-night-soft-ink dark:hover:bg-night-hover dark:focus-visible:outline-night-primary">Show all</button>
+                    )}
+                </div>
                 <form onSubmit={handleSubmit}>
                     <div className="flex min-w-0 items-center gap-2 lg:gap-4">
                         <div className="relative min-w-0 flex-1">
@@ -60,11 +111,20 @@ export function TaskSection({todoList, isSearching, newTasks,setNewTasks,handleS
                                     <path fill="#fff" d="M13.538 3.11a.5.5 0 0 1 .923 0l.48 1.152a.5.5 0 0 0 .421.306l1.244.1a.5.5 0 0 1 .285.878l-.947.812a.5.5 0 0 0-.162.495l.29 1.214a.5.5 0 0 1-.747.542l-1.065-.65a.5.5 0 0 0-.52 0l-1.065.65a.5.5 0 0 1-.747-.542l.289-1.214a.5.5 0 0 0-.161-.495l-.947-.812a.5.5 0 0 1 .285-.878l1.243-.1a.5.5 0 0 0 .422-.306zm5.009 6.86a.5.5 0 0 1 .906 0l.425.91a.5.5 0 0 0 .241.242l.91.425a.5.5 0 0 1 0 .906l-.91.425a.5.5 0 0 0-.241.241l-.425.91a.5.5 0 0 1-.906 0l-.425-.91a.5.5 0 0 0-.242-.241l-.91-.425a.5.5 0 0 1 0-.906l.91-.425a.5.5 0 0 0 .242-.241z" opacity=".5"/></svg>
                                 </button>
                     </div>
+                    <label className="mt-2 block min-w-0">
+                        <span className="mb-1 block font-body text-xs font-semibold text-[#a3637c] dark:text-night-muted">Category</span>
+                        <CategorySelect
+                            categories={categories}
+                            value={getTaskCategoryId({ categoryId: newTaskCategoryId }, categories)}
+                            onChange={setNewTaskCategoryId}
+                            label="Category for new task"
+                        />
+                    </label>
                 </form>
 
                 <div className="mt-3 lg:mt-10">
                     <ul>
-                        {todoList.length === 0? <li className="font-bold text-[#a3637c] dark:text-night-muted text-center mt-10 font-body">{isSearching ? "No tasks match your search." : "Task is empty! Add task above."}</li> : listItems}
+                        {todoList.length === 0? <li className="font-bold text-[#a3637c] dark:text-night-muted text-center mt-10 font-body">{emptyMessage ?? (isSearching ? "No tasks match your search." : "Task is empty! Add task above.")}</li> : listItems}
                     </ul>
                 </div>
             </div>

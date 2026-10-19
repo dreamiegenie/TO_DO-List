@@ -6,16 +6,19 @@ import { Widgets } from './Widgets';
 import { TaskSection } from './TaskSection';
 import { Toast } from './Toast';
 import { useCurrentDate } from './useCurrentDate';
+import { PWAStatus } from './PWAStatus';
+import { readUpdateSnapshot, useUpdateSnapshot } from './updateSession';
 import { getTaskCategoryId, isTaskFromToday, normalizeCategoryName, readSavedCategories } from './categoryUtils';
 
 
 function App() {
     const today = useCurrentDate();
+    const updateSnapshot = readUpdateSnapshot('app');
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const [searchQuery, setSearchQuery] = useState("");
+    const [searchQuery, setSearchQuery] = useState(() => updateSnapshot?.searchQuery ?? "");
     const [categories, setCategories] = useState(readSavedCategories);
-    const [activeView, setActiveView] = useState({ type: 'all' });
-    const [newTaskCategoryId, setNewTaskCategoryId] = useState('');
+    const [activeView, setActiveView] = useState(() => updateSnapshot?.activeView ?? { type: 'all' });
+    const [newTaskCategoryId, setNewTaskCategoryId] = useState(() => updateSnapshot?.newTaskCategoryId ?? '');
     const taskHeadingRef = useRef(null);
     const menuButtonRef = useRef(null);
     const sidebarRef = useRef(null);
@@ -87,7 +90,8 @@ function App() {
     }, [categories]);
 
 
-    const [newTasks, setNewTasks] = useState("");
+    const [newTasks, setNewTasks] = useState(() => updateSnapshot?.newTasks ?? "");
+    useUpdateSnapshot('app', () => ({ newTasks, searchQuery, activeView, newTaskCategoryId }));
 
         const removeTask = tasksId => {
             if (!todoList.some(task => task.id === tasksId && !task.deletedAt)) return;
@@ -118,6 +122,20 @@ function App() {
 
                 return task;
             }))
+        }
+
+        function editTask(taskId, rawText) {
+            const text = rawText.trim();
+            if (!text) return { ok: false, error: 'Enter a task before saving.' };
+            const existingTask = todoList.find(task => task.id === taskId && !task.deletedAt);
+            if (!existingTask) return { ok: false, error: 'This task is no longer available.' };
+
+            if (existingTask.task !== text) {
+                setTodoList(current => current.map(task =>
+                    task.id === taskId && !task.deletedAt ? { ...task, task: text } : task));
+                showToast('add', 'Task updated ♡');
+            }
+            return { ok: true };
         }
 
         function addTask(newlyAddedTasks){
@@ -231,6 +249,7 @@ function App() {
     return(
         <>
             <Toast toasts={toasts} onDismiss={dismissToast}/>
+            <PWAStatus/>
             <Navigation
                 isMenuOpen={isMenuOpen}
                 onToggleMenu={() => setIsMenuOpen(open => !open)}
@@ -264,6 +283,7 @@ function App() {
                         restoreTask={restoreTask}
                         isDeletedView={isDeletedView}
                         handleToggle={handleToggle}
+                        editTask={editTask}
                         handleSubmit={handleSubmit}
                         viewTitle={viewTitle}
                         emptyMessage={emptyMessage}

@@ -1,4 +1,80 @@
+import { useEffect, useId, useRef, useState } from "react";
 import { formatTaskTimestamp } from "./taskDates";
+import { readUpdateSnapshot, useUpdateSnapshot } from "./updateSession";
+
+function EditableTaskText({ todo, editTask, headingRef }) {
+    const restoredEdit = readUpdateSnapshot(`edit:${todo.id}`);
+    const [isEditing, setIsEditing] = useState(() => Boolean(restoredEdit));
+    const [draft, setDraft] = useState(() => restoredEdit?.draft ?? todo.task);
+    useUpdateSnapshot(`edit:${todo.id}`, () => ({ draft }), isEditing);
+    const [error, setError] = useState("");
+    const inputRef = useRef(null);
+    const editButtonRef = useRef(null);
+    const errorId = useId();
+
+    useEffect(() => {
+        if (isEditing) {
+            inputRef.current?.focus();
+            inputRef.current?.select();
+        }
+    }, [isEditing]);
+
+    function finishEditing() {
+        setIsEditing(false);
+        setError("");
+        window.requestAnimationFrame(() => {
+            if (editButtonRef.current?.isConnected) {
+                editButtonRef.current.focus({ preventScroll: true });
+            } else {
+                headingRef?.current?.focus({ preventScroll: true });
+            }
+        });
+    }
+
+    function saveEdit(event) {
+        event.preventDefault();
+        const result = editTask(todo.id, draft);
+        if (!result.ok) {
+            setError(result.error);
+            inputRef.current?.focus();
+            return;
+        }
+        finishEditing();
+    }
+
+    if (isEditing) {
+        return (
+            <form onSubmit={saveEdit} onKeyDown={event => {
+                if (event.key === "Escape") {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    finishEditing();
+                }
+            }} className="min-w-0">
+                <input ref={inputRef} type="text" aria-label="Edit task" aria-invalid={Boolean(error)} aria-describedby={error ? errorId : undefined} value={draft} onChange={event => {
+                    setDraft(event.target.value);
+                    setError("");
+                }} className="block min-h-9 w-full min-w-0 rounded-lg border border-[#d9aabd] bg-[#FFF0F4] px-2 py-1 font-gummy text-base text-[#823b56] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#A85F80] dark:border-night-control-border dark:bg-night-field dark:text-night-text dark:focus-visible:outline-night-primary" />
+                {error && <p id={errorId} role="alert" className="mt-1 font-body text-xs text-[#9D3F62] [overflow-wrap:anywhere] dark:text-night-accent">{error}</p>}
+                <div className="mt-1 flex flex-wrap gap-1">
+                    <button type="submit" className="min-h-8 cursor-pointer rounded-lg border border-[#D493AE] bg-[#F4A7C1]/35 px-2 font-body text-xs font-semibold text-[#823B56] hover:bg-[#f2b5cc] dark:border-night-control-border dark:bg-night-soft dark:text-night-soft-ink dark:hover:bg-night-hover">Save</button>
+                    <button type="button" onClick={finishEditing} className="min-h-8 cursor-pointer rounded-lg px-2 font-body text-xs text-[#A3637C] hover:bg-[#f2b5cc] dark:text-night-muted dark:hover:bg-night-hover">Cancel</button>
+                </div>
+            </form>
+        );
+    }
+
+    return (
+        <button ref={editButtonRef} type="button" aria-label={`Edit ${todo.task}`} title="Edit task" onClick={() => {
+            setDraft(todo.task);
+            setError("");
+            setIsEditing(true);
+        }} className="block w-full min-w-0 cursor-text rounded-sm text-left font-gummy text-xs text-[#a8637c] [overflow-wrap:anywhere] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#A85F80] dark:text-night-text dark:focus-visible:outline-night-primary min-[375px]:text-sm lg:text-base">
+            <span style={{ textDecoration: todo.completed ? "line-through" : "none" }}>{todo.task}</span>
+            <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="ml-1 inline size-3 shrink-0 align-middle opacity-70"><path d="m12.5 3.5 4 4M3 17l4.5-1 10-10a1.4 1.4 0 0 0 0-2l-1.5-1.5a1.4 1.4 0 0 0-2 0l-10 10z" /></svg>
+        </button>
+    );
+}
 
 export function TaskSection({
     todoList,
@@ -9,6 +85,7 @@ export function TaskSection({
     handleSubmit,
     removeTask,
     handleToggle,
+    editTask,
     isDeletedView = false,
     restoreTask,
     viewTitle = "Tasks",
@@ -36,7 +113,11 @@ export function TaskSection({
                         <input type="checkbox" aria-label={`Mark ${todo.task} as ${todo.completed ? 'incomplete' : 'complete'}`} checked={todo.completed} onChange={() => handleToggle(todo.id)} className="w-6 h-6 shrink-0 rounded-full appearance-none border-2 border-[#DAA3B8] bg-white dark:bg-night-field dark:border-night-control-border dark:checked:bg-night-primary dark:checked:border-night-primary dark:checked:after:text-night-primary-ink checked:bg-[#F4A4C3] checked:border-[#F4A4C3] cursor-pointer transition-all duration-300 checked:after:content-['✓'] checked:after:text-white checked:after:flex checked:after:justify-center checked:after:items-center checked:after:text-sm"/>
                     )}
                     <div className="min-w-0 flex-1">
-                        <span style={{textDecoration: todo.completed? "line-through ": "none" }} className="block min-w-0 text-xs [overflow-wrap:anywhere] font-gummy text-[#a8637c] dark:text-night-text min-[375px]:text-sm lg:text-base">{todo.task}</span>
+                        {isDeletedView ? (
+                            <span style={{textDecoration: todo.completed? "line-through ": "none" }} className="block min-w-0 text-xs [overflow-wrap:anywhere] font-gummy text-[#a8637c] dark:text-night-text min-[375px]:text-sm lg:text-base">{todo.task}</span>
+                        ) : (
+                            <EditableTaskText todo={todo} editTask={editTask} headingRef={headingRef}/>
+                        )}
                         <span className="mt-0.5 block text-[10px] font-itim text-[#eeb9cc] dark:text-night-muted min-[375px]:text-xs lg:hidden">{timestampLabel}</span>
                     </div>
                 </div>

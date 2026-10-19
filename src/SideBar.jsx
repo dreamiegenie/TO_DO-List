@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { getTaskCategoryId, isTaskFromToday } from "./categoryUtils";
+import { readUpdateSnapshot, useUpdateSnapshot } from "./updateSession";
 
 export function SideBar({
     todoList,
@@ -12,8 +13,10 @@ export function SideBar({
     onRenameCategory,
     onDeleteCategory,
 }) {
-    const [editor, setEditor] = useState(null);
-    const [categoryName, setCategoryName] = useState("");
+    const restoredEditor = readUpdateSnapshot('categoryEditor');
+    const [editor, setEditor] = useState(() => restoredEditor?.editor ?? null);
+    const [categoryName, setCategoryName] = useState(() => restoredEditor?.categoryName ?? "");
+    useUpdateSnapshot('categoryEditor', () => ({ editor, categoryName }), Boolean(editor));
     const [editorError, setEditorError] = useState("");
     const plusRef = useRef(null);
     const editorInputRef = useRef(null);

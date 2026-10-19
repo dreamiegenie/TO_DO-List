@@ -1,12 +1,19 @@
 import { useState, useEffect, useRef } from "react";
+import { readUpdateSnapshot, useUpdateSnapshot } from "./updateSession";
 
 export function FocusTimer({onComplete}) {
 
 
     const initialTime = 25 * 60;
 
-    const [isRunning, setIsRunning] = useState(false);
-    const [secondsLeft, setSecondsLeft] = useState(initialTime);
+    const restoredTimer = readUpdateSnapshot('timer');
+    const [isRunning, setIsRunning] = useState(() => Boolean(restoredTimer?.isRunning));
+    const [secondsLeft, setSecondsLeft] = useState(() => {
+        if (!restoredTimer || !Number.isFinite(restoredTimer.secondsLeft)) return initialTime;
+        const elapsed = restoredTimer.isRunning ? Math.max(0, Math.floor((Date.now() - restoredTimer.capturedAt) / 1000)) : 0;
+        return Math.max(0, Math.min(initialTime, restoredTimer.secondsLeft - elapsed));
+    });
+    useUpdateSnapshot('timer', () => ({ isRunning, secondsLeft, capturedAt: Date.now() }));
     const completionReported = useRef(false);
 
     const minutes = Math.floor(secondsLeft / 60);

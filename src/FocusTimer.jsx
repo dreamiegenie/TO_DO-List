@@ -30,7 +30,7 @@ export function FocusTimer() {
     }
 
     const buttonStyle =
-        "min-h-8 min-w-0 flex-1 gap-0.5 text-[11px] text-[#A85F80] border border-[#F4A7C1] font-mali p-1 rounded-2xl flex items-center justify-center hover:bg-[#A85F80] hover:text-white cursor-pointer transition-colors duration-300 lg:min-h-0 lg:gap-2 lg:p-2 lg:text-sm lg:@min-[220px]:flex-none lg:@min-[220px]:px-5 lg:@min-[220px]:text-base";
+        "min-h-8 min-w-0 flex-1 gap-0.5 text-[11px] text-[#A85F80] border border-[#F4A7C1] font-mali p-1 rounded-2xl flex items-center justify-center hover:bg-[#A85F80] hover:text-white cursor-pointer transition-colors duration-300 lg:min-h-0 lg:gap-2 lg:p-2 lg:text-sm lg:@min-[220px]:flex-none lg:@min-[220px]:px-5 lg:@min-[220px]:text-base dark:border-night-control-border dark:bg-night-soft dark:text-night-soft-ink dark:hover:bg-night-hover dark:hover:text-night-text";
 
     return (
         <div className="flex min-w-0 flex-col items-center gap-2 pt-1 lg:gap-5 lg:p-2 lg:@min-[220px]:p-5">
@@ -38,12 +38,12 @@ export function FocusTimer() {
             <div className="flex min-w-0 flex-col items-center lg:gap-2">
                 
 
-                <p className="font-gummy text-3xl text-[#684D60] lg:text-4xl lg:@min-[220px]:text-5xl">
+                <p className="font-gummy text-3xl text-[#684D60] lg:text-4xl lg:@min-[220px]:text-5xl dark:text-night-text">
                     {String(minutes).padStart(2, "0")}:
                     {String(seconds).padStart(2, "0")}
                 </p>
 
-                <p className="font-mali text-center text-[10px] leading-3 text-[#A18A98] lg:text-left lg:text-xs lg:leading-4">
+                <p className="font-mali text-center text-[10px] leading-3 text-[#A18A98] lg:text-left lg:text-xs lg:leading-4 dark:text-night-muted">
                     {secondsLeft === 0
                         ? "Session complete! 🌸"
                         : isRunning

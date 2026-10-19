@@ -3,6 +3,7 @@
 
 @import "tailwindcss";
 
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 
 @theme {
@@ -11,10 +12,58 @@
     --font-mali: "Mali", cursive;
     --font-gummy: "Sour Gummy", sans-serif;
     --font-itim: "Itim", cursive;
+    --color-night-page: #211A26;
+    --color-night-nav: #312332;
+    --color-night-panel: #2C2331;
+    --color-night-greeting: #3B2938;
+    --color-night-card: #342A39;
+    --color-night-widget: #302432;
+    --color-night-field: #261E2B;
+    --color-night-text: #F6E8F0;
+    --color-night-accent: #F0B8D1;
+    --color-night-muted: #C5A8B9;
+    --color-night-border: #765366;
+    --color-night-control-border: #AD7D94;
+    --color-night-primary: #E8A1C0;
+    --color-night-primary-ink: #351E2B;
+    --color-night-soft: #3B2838;
+    --color-night-soft-ink: #F2BCD3;
+    --color-night-hover: #4D3547;
+    --color-night-ring-track: #553747;
+    --color-night-ring-center: #2C2230;
+    --color-night-shadow: #130D18;
+}
+
+:root {
+    color-scheme: light;
+    --progress-accent: #F4A7C1;
+    --progress-track: #FCE5EE;
+    background: #f7e6ee;
+}
+
+:root[data-theme="dark"] {
+    color-scheme: dark;
+    --progress-accent: var(--color-night-primary);
+    --progress-track: var(--color-night-ring-track);
+    background: var(--color-night-page);
 }
 
 body {
     background: #f7e6ee;
+}
+
+[data-theme="dark"] body {
+    background: var(--color-night-page);
+    color: var(--color-night-text);
+}
+
+[data-theme="dark"] :where(input, textarea) {
+    caret-color: var(--color-night-primary);
+}
+
+[data-theme="dark"] :where(button, input, textarea):focus-visible {
+    outline: 2px solid var(--color-night-primary);
+    outline-offset: 3px;
 }
 
 /* 🐱 Kitty breathing */

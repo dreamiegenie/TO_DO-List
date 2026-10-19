@@ -14,25 +14,28 @@ export function TaskSection({todoList, isSearching, newTasks,setNewTasks,handleS
 
     const listItems = todoList.map(todo => (
         
-        <li key={todo.id} className="bg-white rounded-3xl p-2 pt-4 border border-[#d392a7c7] shadow-xxs mb-2">
-            <div className="flex justify-between items-center gap-2 mx-1 lg:mx-4">
+        <li key={todo.id} className="bg-white rounded-xl p-2.5 border border-[#d392a7c7] shadow-xxs mb-2 lg:rounded-3xl lg:p-2 lg:pt-4">
+            <div className="flex justify-between items-center gap-2 lg:mx-4">
                 <div className="flex min-w-0 flex-1 items-center gap-2">
                     <input type="checkbox" aria-label={`Mark ${todo.task} as ${todo.completed ? 'incomplete' : 'complete'}`} checked={todo.completed} onChange={() => handleToggle(todo.id)} className="w-6 h-6 shrink-0 rounded-full appearance-none border-2 border-[#DAA3B8] bg-white checked:bg-[#F4A4C3] checked:border-[#F4A4C3] cursor-pointer transition-all duration-300 checked:after:content-['✓'] checked:after:text-white checked:after:flex checked:after:justify-center checked:after:items-center checked:after:text-sm"/>
-                    <span style={{textDecoration: todo.completed? "line-through ": "none" }} className="min-w-0 [overflow-wrap:anywhere] font-gummy text-[#a8637c]">{todo.task}</span>
+                    <div className="min-w-0 flex-1">
+                        <span style={{textDecoration: todo.completed? "line-through ": "none" }} className="block min-w-0 text-xs [overflow-wrap:anywhere] font-gummy text-[#a8637c] min-[375px]:text-sm lg:text-base">{todo.task}</span>
+                        <span className="mt-0.5 block text-[10px] font-itim text-[#eeb9cc] min-[375px]:text-xs lg:hidden">{getTaskTimestamp(todo)}</span>
+                    </div>
                 </div>
             
             <button type="button" aria-label={`Remove ${todo.task}`} onClick={() => removeTask(todo.id)}
-                className="flex min-h-10 shrink-0 items-center gap-1.5 px-2 py-1.5 rounded-full bg-[#FFF0F5] border border-[#F6C3D5] text-[#C17694] hover:bg-[#FFE3EE] hover:shadow-sm transition-all duration-200 sm:px-3 lg:min-h-0">
+                className="flex min-h-9 shrink-0 items-center gap-1 px-2 py-1.5 rounded-full bg-[#FFF0F5] border border-[#F6C3D5] text-[#C17694] hover:bg-[#FFE3EE] hover:shadow-sm transition-all duration-200 min-[375px]:px-3 lg:min-h-0 lg:gap-1.5">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 64 64" fill="none">
                 <path d="M24 12C24 9.8 25.8 8 28 8H36C38.2 8 40 9.8 40 12V14H47C48.7 14 50 15.3 50 17C50 18.7 48.7 20 47 20H17C15.3 20 14 18.7 14 17C14 15.3 15.3 14 17 14H24V12Z" fill="#F8BFD2" stroke="#C97C9A" strokeWidth="2.2" strokeLinejoin="round"/>
                 <path d="M20 22H44L42 49C41.8 52 39.3 54.4 36.3 54.4H27.7C24.7 54.4 22.2 52 22 49L20 22Z" fill="#FFDCE8" stroke="#C97C9A" strokeWidth="2.2" strokeLinejoin="round"/>
                 <path d="M27 28V45M32 28V45M37 28V45" stroke="#E89AB7" strokeWidth="2.4" strokeLinecap="round"/>
                 <path d="M32 39C29.8 36.8 26.5 35.6 26.5 32.5C26.5 30.4 28.1 29 30.1 29C31.3 29 32 29.6 32 29.6C32 29.6 32.7 29 33.9 29C35.9 29 37.5 30.4 37.5 32.5C37.5 35.6 34.2 36.8 32 39Z" fill="#F7A9C4"/>
                 </svg>
-                <span className="hidden font-bold font-body sm:inline">remove</span>
+                <span className="font-body text-xs capitalize lg:text-base lg:font-bold lg:normal-case">remove</span>
             </button>
             </div>
-                <span className="text-[#eeb9cc] text-xs font-itim pl-9 lg:px-12">{getTaskTimestamp(todo)}</span>
+                <span className="hidden text-[#eeb9cc] text-xs font-itim lg:inline lg:px-12">{getTaskTimestamp(todo)}</span>
         </li>
         
         
@@ -41,7 +44,7 @@ export function TaskSection({todoList, isSearching, newTasks,setNewTasks,handleS
 
     return(
         <>
-            <div className="min-w-0 rounded-2xl bg-white/40 m-4 p-3 sm:p-4 lg:p-6">
+            <div className="min-w-0 rounded-2xl bg-white/40 mx-4 mt-2 mb-0 p-2 sm:p-4 lg:m-4 lg:p-6">
                 <form onSubmit={handleSubmit}>
                     <div className="flex min-w-0 items-center gap-2 lg:gap-4">
                         <div className="relative min-w-0 flex-1">
@@ -59,7 +62,7 @@ export function TaskSection({todoList, isSearching, newTasks,setNewTasks,handleS
                     </div>
                 </form>
 
-                <div className="mt-10">
+                <div className="mt-3 lg:mt-10">
                     <ul>
                         {todoList.length === 0? <li className="font-bold text-[#a3637c] text-center mt-10 font-body">{isSearching ? "No tasks match your search." : "Task is empty! Add task above."}</li> : listItems}
                     </ul>

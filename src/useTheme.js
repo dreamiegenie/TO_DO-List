@@ -15,6 +15,7 @@ export function useTheme() {
         const theme = darkMode ? "dark" : "light";
         document.documentElement.dataset.theme = theme;
         document.documentElement.style.colorScheme = theme;
+        document.querySelector('meta[name="theme-color"]')?.setAttribute('content', darkMode ? '#211A26' : '#f7e6ee');
         try {
             window.localStorage.setItem("darkMode", JSON.stringify(darkMode));
         } catch {

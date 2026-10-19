@@ -3,13 +3,6 @@ import { useState, useEffect } from "react";
 export function FocusTimer() {
 
 
-    const [onMouseHover, setOnMouseHover] = useState(false);
-
-    const handleHover = () => {
-        setOnMouseHover(true);
-    }
-
-
     const initialTime = 25 * 60;
 
     const [isRunning, setIsRunning] = useState(false);
@@ -21,18 +14,15 @@ export function FocusTimer() {
     useEffect(() => {
         if (!isRunning) return;
 
-        const timer = setInterval(() => {
-            setSecondsLeft(prev => Math.max(prev - 1, 0));
+        const timer = setTimeout(() => {
+            setSecondsLeft(Math.max(secondsLeft - 1, 0));
+            if (secondsLeft <= 1) {
+                setIsRunning(false);
+            }
         }, 1000);
 
-        return () => clearInterval(timer);
-    }, [isRunning]);
-
-    useEffect(() => {
-        if (secondsLeft === 0) {
-            setIsRunning(false);
-        }
-    }, [secondsLeft]);
+        return () => clearTimeout(timer);
+    }, [isRunning, secondsLeft]);
 
     function handleReset() {
         setIsRunning(false);
@@ -40,20 +30,20 @@ export function FocusTimer() {
     }
 
     const buttonStyle =
-        "text-[#A85F80] border border-[#F4A7C1] font-mali p-2 px-5 rounded-2xl flex items-center justify-center gap-2 hover:bg-[#A85F80] hover:text-white cursor-pointer duration-300";
+        "min-h-10 min-w-0 flex-1 text-xs text-[#A85F80] border border-[#F4A7C1] font-mali p-1 rounded-2xl flex items-center justify-center hover:bg-[#A85F80] hover:text-white cursor-pointer duration-300 lg:min-h-0 lg:gap-2 lg:p-2 lg:text-sm lg:@min-[220px]:flex-none lg:@min-[220px]:px-5 lg:@min-[220px]:text-base";
 
     return (
-        <div className="flex flex-col items-center gap-5 p-5">
+        <div className="flex min-w-0 flex-col items-center gap-3 pt-4 lg:gap-5 lg:p-2 lg:@min-[220px]:p-5">
 
-            <div className="flex flex-col items-center gap-2">
+            <div className="flex min-w-0 flex-col items-center gap-2">
                 
 
-                <p className="font-gummy text-5xl text-[#684D60]">
+                <p className="font-gummy text-3xl text-[#684D60] sm:text-4xl lg:@min-[220px]:text-5xl">
                     {String(minutes).padStart(2, "0")}:
                     {String(seconds).padStart(2, "0")}
                 </p>
 
-                <p className="font-mali text-xs text-[#A18A98]">
+                <p className="font-mali text-center text-xs text-[#A18A98] lg:text-left">
                     {secondsLeft === 0
                         ? "Session complete! 🌸"
                         : isRunning
@@ -62,7 +52,7 @@ export function FocusTimer() {
                 </p>
             </div>
 
-            <div className="flex items-center justify-center gap-3">
+            <div className="flex w-full min-w-0 flex-wrap items-center justify-center gap-1 lg:gap-2 lg:@min-[220px]:w-auto lg:@min-[220px]:gap-3">
 
                 <button
                     type="button"

@@ -72,7 +72,7 @@ function ToastItem({ toast, onDismiss }) {
             }}
         >
             <ToastIcon type={toast.type} />
-            <p className="min-w-0 flex-1 font-mali text-sm [overflow-wrap:anywhere]">
+            <p className="min-w-0 flex-1 font-mali text-sm wrap-anywhere">
                 {toast.message}
             </p>
             <button

@@ -1,21 +1,3 @@
-import { getTaskCategoryId } from "./categoryUtils";
-
-function CategorySelect({ categories, value, onChange, label, compact = false }) {
-    return (
-        <select
-            aria-label={label}
-            value={value ?? ""}
-            onChange={event => onChange?.(event.target.value)}
-            className={`block w-full min-w-0 truncate rounded-lg border border-[#f4c3d4] bg-[#FFF0F4] text-[#a3637c] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#A85F80] dark:border-night-control-border dark:bg-night-field dark:text-night-text dark:focus-visible:outline-night-primary ${compact ? "min-h-7 max-w-48 px-1 py-1 font-gummy text-[10px] min-[375px]:text-xs" : "min-h-10 px-2 py-2 font-body text-sm"}`}
-        >
-            <option value="">Uncategorized</option>
-            {categories.map(category => (
-                <option key={category.id} value={category.id}>{category.name}</option>
-            ))}
-        </select>
-    );
-}
-
 function getTaskTimestamp(todo) {
     if (todo.timestamp) return todo.timestamp;
     if (typeof todo.id !== "number" || !Number.isFinite(todo.id)) return "";
@@ -34,10 +16,6 @@ export function TaskSection({
     handleSubmit,
     removeTask,
     handleToggle,
-    categories = [],
-    newTaskCategoryId = "",
-    setNewTaskCategoryId,
-    onTaskCategoryChange,
     viewTitle = "Tasks",
     emptyMessage,
     hasActiveFilters = false,
@@ -54,15 +32,6 @@ export function TaskSection({
                     <div className="min-w-0 flex-1">
                         <span style={{textDecoration: todo.completed? "line-through ": "none" }} className="block min-w-0 text-xs [overflow-wrap:anywhere] font-gummy text-[#a8637c] dark:text-night-text min-[375px]:text-sm lg:text-base">{todo.task}</span>
                         <span className="mt-0.5 block text-[10px] font-itim text-[#eeb9cc] dark:text-night-muted min-[375px]:text-xs lg:hidden">{getTaskTimestamp(todo)}</span>
-                        <div className="mt-1 min-w-0">
-                            <CategorySelect
-                                categories={categories}
-                                value={getTaskCategoryId(todo, categories)}
-                                onChange={categoryId => onTaskCategoryChange?.(todo.id, categoryId)}
-                                label={`Category for ${todo.task}`}
-                                compact
-                            />
-                        </div>
                     </div>
                 </div>
             
@@ -111,15 +80,6 @@ export function TaskSection({
                                     <path fill="#fff" d="M13.538 3.11a.5.5 0 0 1 .923 0l.48 1.152a.5.5 0 0 0 .421.306l1.244.1a.5.5 0 0 1 .285.878l-.947.812a.5.5 0 0 0-.162.495l.29 1.214a.5.5 0 0 1-.747.542l-1.065-.65a.5.5 0 0 0-.52 0l-1.065.65a.5.5 0 0 1-.747-.542l.289-1.214a.5.5 0 0 0-.161-.495l-.947-.812a.5.5 0 0 1 .285-.878l1.243-.1a.5.5 0 0 0 .422-.306zm5.009 6.86a.5.5 0 0 1 .906 0l.425.91a.5.5 0 0 0 .241.242l.91.425a.5.5 0 0 1 0 .906l-.91.425a.5.5 0 0 0-.241.241l-.425.91a.5.5 0 0 1-.906 0l-.425-.91a.5.5 0 0 0-.242-.241l-.91-.425a.5.5 0 0 1 0-.906l.91-.425a.5.5 0 0 0 .242-.241z" opacity=".5"/></svg>
                                 </button>
                     </div>
-                    <label className="mt-2 block min-w-0">
-                        <span className="mb-1 block font-body text-xs font-semibold text-[#a3637c] dark:text-night-muted">Category</span>
-                        <CategorySelect
-                            categories={categories}
-                            value={getTaskCategoryId({ categoryId: newTaskCategoryId }, categories)}
-                            onChange={setNewTaskCategoryId}
-                            label="Category for new task"
-                        />
-                    </label>
                 </form>
 
                 <div className="mt-3 lg:mt-10">

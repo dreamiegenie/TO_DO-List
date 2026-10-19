@@ -184,15 +184,6 @@ function App() {
         return true;
     }
 
-    function assignTaskCategory(taskId, categoryId) {
-        if (categoryId && !categories.some(category => category.id === categoryId)) return;
-        setTodoList(current => current.map(task => task.id === taskId ? { ...task, categoryId: categoryId || null } : task));
-        if ((activeView.type === 'category' && activeView.categoryId !== categoryId) ||
-            (activeView.type === 'uncategorized' && categoryId)) {
-            window.requestAnimationFrame(() => taskHeadingRef.current?.focus({ preventScroll: true }));
-        }
-    }
-
     function clearFilters() {
         selectView({ type: 'all' });
         setSearchQuery('');
@@ -247,10 +238,6 @@ function App() {
                         removeTask={removeTask}
                         handleToggle={handleToggle}
                         handleSubmit={handleSubmit}
-                        categories={categories}
-                        newTaskCategoryId={newTaskCategoryId}
-                        setNewTaskCategoryId={setNewTaskCategoryId}
-                        onTaskCategoryChange={assignTaskCategory}
                         viewTitle={viewTitle}
                         emptyMessage={emptyMessage}
                         hasActiveFilters={hasActiveFilters}

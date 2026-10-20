@@ -10,7 +10,7 @@ export function Navigation ({isMenuOpen, onToggleMenu, menuButtonRef, searchQuer
 
     return (
         <>
-            <nav aria-label="Main navigation" className="grid grid-cols-[auto_minmax(0,1fr)_auto] gap-x-2 gap-y-3 bg-transparent p-0 mx-4 mt-4 mb-0 items-center lg:m-4 lg:flex lg:justify-between lg:gap-0 lg:bg-[#F8C8DC] lg:p-3 lg:shadow lg:shadow-[#B77996] lg:dark:bg-night-nav lg:dark:shadow-night-shadow">
+            <nav aria-label="Main navigation" className="grid grid-cols-[auto_minmax(0,1fr)_auto] lg:rounded-3xl gap-x-2 gap-y-3 bg-transparent p-0 mx-4 mt-4 mb-0 items-center lg:m-4 lg:flex lg:justify-between lg:gap-0 lg:bg-[#F8C8DC] lg:p-3 lg:shadow lg:shadow-[#B77996] lg:dark:bg-night-nav lg:dark:shadow-night-shadow">
                 <button
                     ref={menuButtonRef}
                     type="button"

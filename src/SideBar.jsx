@@ -1,10 +1,12 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { getTaskCategoryId, isTaskFromToday } from "./categoryUtils";
 import { readUpdateSnapshot, useUpdateSnapshot } from "./updateSession";
+import { formatDueDate, getReminderTime } from "./reminders";
 
 export function SideBar({
     todoList,
     deletedCount = 0,
+    upcomingReminders = [],
     today = new Date(),
     categories = [],
     activeView = { type: "all" },
@@ -26,6 +28,8 @@ export function SideBar({
 
     const completedTasks = todoList.filter(todo => todo.completed).length;
     const todayTasks = todoList.filter(task => isTaskFromToday(task, today)).length;
+    const nextReminder = upcomingReminders[0];
+    const nextReminderTime = nextReminder ? getReminderTime(nextReminder) : null;
     const categoryCounts = new Map(categories.map(category => [category.id, 0]));
     let uncategorizedTasks = 0;
 
@@ -113,15 +117,26 @@ export function SideBar({
                     <span className="shrink-0 font-mali dark:text-night-accent">{todayTasks}</span>
                 </button>
 
-                <button type="button" aria-pressed={activeView.type === "all"} onClick={() => onSelectView({ type: "all" })} className={filterButtonClass(activeView.type === "all")}>
+                <div className="min-w-0">
+                <button type="button" aria-label={`Reminders, ${upcomingReminders.length} upcoming ${upcomingReminders.length === 1 ? "reminder" : "reminders"}`} aria-pressed={activeView.type === "reminders"} onClick={() => onSelectView({ type: "reminders" })} className={`${filterButtonClass(activeView.type === "reminders")} w-full`}>
                     <span className="flex min-w-0 items-center gap-2">
                         <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-calendar-heart shrink-0" viewBox="0 0 16 16">
                             <path fillRule="evenodd" d="M4 .5a.5.5 0 0 0-1 0V1H2a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2h-1V.5a.5.5 0 0 0-1 0V1H4zM1 14V4h14v10a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1m7-6.507c1.664-1.711 5.825 1.283 0 5.132-5.825-3.85-1.664-6.843 0-5.132"/>
                         </svg>
-                        <span className="min-w-0 truncate">Total</span>
+                        <span className="min-w-0 truncate">Reminders</span>
                     </span>
-                    <span className="shrink-0 font-mali dark:text-night-accent">{todoList.length}</span>
+                    <span className="shrink-0 font-mali dark:text-night-accent">{upcomingReminders.length}</span>
                 </button>
+                <p className="mt-1 min-w-0 px-2 font-body text-xs text-[#A3637C] dark:text-night-muted">
+                    {nextReminder && Number.isFinite(nextReminderTime) ? (
+                        <>
+                            <span className="block font-semibold">Next reminder</span>
+                            <span className="block truncate" title={nextReminder.task}>{nextReminder.task}</span>
+                            <time className="block wrap-anywhere" dateTime={new Date(nextReminderTime).toISOString()}>{formatDueDate(new Date(nextReminderTime).toISOString())}</time>
+                        </>
+                    ) : "No upcoming reminders"}
+                </p>
+                </div>
 
                 <button type="button" aria-pressed={activeView.type === "completed"} onClick={() => onSelectView({ type: "completed" })} className={filterButtonClass(activeView.type === "completed")}>
                     <span className="flex min-w-0 items-center gap-2">
@@ -132,6 +147,7 @@ export function SideBar({
                     </span>
                     <span className="shrink-0 font-mali dark:text-night-accent">{completedTasks}</span>
                 </button>
+                <button type="button" aria-pressed={activeView.type === "all"} onClick={() => onSelectView({ type: "all" })} className={`min-h-9 cursor-pointer self-start rounded-lg px-2 font-body text-xs underline decoration-[#D493AE] underline-offset-4 hover:bg-[#f2b5cc] dark:decoration-night-border dark:hover:bg-night-hover ${activeView.type === "all" ? "font-bold text-[#A3637C] dark:text-night-accent" : "text-[#B77996] dark:text-night-muted"}`}>All tasks <span className="ml-1 font-mali">{todoList.length}</span></button>
             </div>
 
             <div className="mt-3 flex items-center justify-between gap-2">

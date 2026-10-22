@@ -31,6 +31,7 @@ export default defineConfig({
       },
       workbox: {
         cacheId: 'dreamie-todos',
+        importScripts: ['/reminder-worker.js'],
         globPatterns: ['**/*.{html,js,css,png,svg,ico,woff2,webmanifest}'],
         globIgnores: ['**/WIP.png', '**/social-preview.*'],
         navigateFallback: '/index.html',

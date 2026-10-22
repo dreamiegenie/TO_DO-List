@@ -7,17 +7,32 @@ import { TaskSection } from './TaskSection';
 import { Toast } from './Toast';
 import { useCurrentDate } from './useCurrentDate';
 import { PWAStatus } from './PWAStatus';
+import { useLocalTasks } from './useLocalTasks';
+import { getUpcomingReminders, validateReminder } from './reminders';
+import { useReminders } from './useReminders';
+import { NotificationSettings } from './NotificationSettings';
 import { readUpdateSnapshot, useUpdateSnapshot } from './updateSession';
 import { getTaskCategoryId, isTaskFromToday, normalizeCategoryName, readSavedCategories } from './categoryUtils';
 
 
 function App() {
     const today = useCurrentDate();
+    const [todoList, setTodoList, storageError] = useLocalTasks();
+    const notifications = useReminders(todoList, { canSync: !storageError });
+    const [reminderNow, setReminderNow] = useState(Date.now);
+    const [focusedTaskId, setFocusedTaskId] = useState(() => new URLSearchParams(window.location.search).get('task'));
+    useEffect(() => {
+        const interval = window.setInterval(() => setReminderNow(Date.now()), 30000);
+        return () => window.clearInterval(interval);
+    }, []);
     const updateSnapshot = readUpdateSnapshot('app');
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const [searchQuery, setSearchQuery] = useState(() => updateSnapshot?.searchQuery ?? "");
+    const [searchQuery, setSearchQuery] = useState(() => focusedTaskId ? "" : updateSnapshot?.searchQuery ?? "");
     const [categories, setCategories] = useState(readSavedCategories);
-    const [activeView, setActiveView] = useState(() => updateSnapshot?.activeView ?? { type: 'all' });
+    const [activeView, setActiveView] = useState(() => {
+        const selected = todoList.find(task => String(task.id) === focusedTaskId);
+        return selected ? { type: selected.deletedAt ? 'deleted' : 'all' } : updateSnapshot?.activeView ?? { type: 'all' };
+    });
     const [newTaskCategoryId, setNewTaskCategoryId] = useState(() => updateSnapshot?.newTaskCategoryId ?? '');
     const taskHeadingRef = useRef(null);
     const menuButtonRef = useRef(null);
@@ -68,19 +83,6 @@ function App() {
         };
     }, [isMenuOpen]);
 
-    const [todoList, setTodoList] = useState(() => {
-        const saved = localStorage.getItem("todos");
-
-        return saved? JSON.parse(saved) : [];
-    })
-
-
-    useEffect(()=>{
-        localStorage.setItem("todos", JSON.stringify(todoList));
-
-        
-    }, [todoList]);
-
     useEffect(() => {
         try {
             localStorage.setItem('todoCategories', JSON.stringify(categories));
@@ -93,55 +95,66 @@ function App() {
     const [newTasks, setNewTasks] = useState(() => updateSnapshot?.newTasks ?? "");
     useUpdateSnapshot('app', () => ({ newTasks, searchQuery, activeView, newTaskCategoryId }));
 
-        const removeTask = tasksId => {
-            if (!todoList.some(task => task.id === tasksId && !task.deletedAt)) return;
-            const deletedAt = new Date().toISOString();
-            setTodoList(current => current.map(task =>
-                task.id === tasksId && !task.deletedAt ? { ...task, deletedAt } : task));
-            showToast('delete', 'Task moved to Deleted Tasks ♡');
-            window.requestAnimationFrame(() => taskHeadingRef.current?.focus({ preventScroll: true }));
-        }
+    function changeTasks(transform, message, type = 'add') {
+        const result = setTodoList(transform);
+        if (!result.ok) { showToast('delete', result.error); return result; }
+        if (message) showToast(type, message);
+        return result;
+    }
 
-        const restoreTask = tasksId => {
-            if (!todoList.some(task => task.id === tasksId && task.deletedAt)) return;
-            setTodoList(current => current.map(task => {
-                if (task.id !== tasksId || !task.deletedAt) return task;
-                const restoredTask = { ...task };
-                delete restoredTask.deletedAt;
-                return restoredTask;
-            }));
-            showToast('add', 'Task restored ♡');
-            window.requestAnimationFrame(() => taskHeadingRef.current?.focus({ preventScroll: true }));
-        }
+    const newReminderRevision = task => task.reminder ? { ...task, reminder: { ...task.reminder, revision: crypto.randomUUID() } } : task;
 
-        const handleToggle = (idToToggle) => {
-            setTodoList(current => current.map(task => {
-                if(task.id === idToToggle && !task.deletedAt){
-                    return {...task, completed: !task.completed}
-                }
+    function removeTask(id) {
+        if (!todoList.some(task => task.id === id && !task.deletedAt)) return;
+        changeTasks(tasks => tasks.map(task => task.id === id && !task.deletedAt ? newReminderRevision({ ...task, deletedAt: new Date().toISOString() }) : task), 'Task moved to Deleted Tasks ♡', 'delete');
+        window.requestAnimationFrame(() => taskHeadingRef.current?.focus({ preventScroll: true }));
+    }
 
-                return task;
-            }))
-        }
+    function restoreTask(id) {
+        if (!todoList.some(task => task.id === id && task.deletedAt)) return;
+        changeTasks(tasks => tasks.map(task => {
+            if (task.id !== id || !task.deletedAt) return task;
+            const restored = { ...task }; delete restored.deletedAt;
+            return newReminderRevision(restored);
+        }), 'Task restored ♡');
+        window.requestAnimationFrame(() => taskHeadingRef.current?.focus({ preventScroll: true }));
+    }
 
-        function editTask(taskId, rawText) {
-            const text = rawText.trim();
-            if (!text) return { ok: false, error: 'Enter a task before saving.' };
-            const existingTask = todoList.find(task => task.id === taskId && !task.deletedAt);
-            if (!existingTask) return { ok: false, error: 'This task is no longer available.' };
+    function permanentlyDeleteTask(id) {
+        return changeTasks(tasks => tasks.filter(task => task.id !== id || !task.deletedAt), 'Task permanently deleted ♡', 'delete');
+    }
 
-            if (existingTask.task !== text) {
-                setTodoList(current => current.map(task =>
-                    task.id === taskId && !task.deletedAt ? { ...task, task: text } : task));
-                showToast('add', 'Task updated ♡');
-            }
-            return { ok: true };
-        }
+    function emptyBin() {
+        return changeTasks(tasks => tasks.filter(task => !task.deletedAt), 'Deleted Tasks emptied ♡', 'delete');
+    }
 
-        function addTask(newlyAddedTasks){
-            setTodoList(current => [...current, newlyAddedTasks]);
-            showToast('add', 'Task added ♡');
-        }
+    function handleToggle(id) {
+        changeTasks(tasks => tasks.map(task => task.id === id && !task.deletedAt ? newReminderRevision({ ...task, completed: !task.completed }) : task));
+    }
+
+    function editTask(id, rawText) {
+        const text = rawText.trim();
+        if (!text) return { ok: false, error: 'Enter a task before saving.' };
+        const task = todoList.find(item => item.id === id && !item.deletedAt);
+        if (!task) return { ok: false, error: 'This task is no longer available.' };
+        if (task.task === text) return { ok: true };
+        return changeTasks(tasks => tasks.map(item => item.id === id && !item.deletedAt ? { ...item, task: text } : item), 'Task updated ♡');
+    }
+
+    function saveReminder(id, patch) {
+        const task = todoList.find(item => item.id === id && !item.deletedAt);
+        if (!task) return { ok: false, error: 'This task is no longer available.' };
+        const result = validateReminder(patch, task);
+        if (!result.ok) return result;
+        return changeTasks(tasks => tasks.map(item => item.id === id && !item.deletedAt ? {
+            ...item, dueAt: result.dueAt,
+            reminder: { ...item.reminder, ...result.reminder, revision: crypto.randomUUID() },
+        } : item), result.reminder.enabled ? 'Reminder saved ♡' : 'Due date updated ♡');
+    }
+
+    function addTask(task) {
+        return changeTasks(tasks => [...tasks, task], 'Task added ♡');
+    }
 
         function handleSubmit(e){
             e.preventDefault();
@@ -157,9 +170,9 @@ function App() {
                 categoryId: categories.some(category => category.id === newTaskCategoryId) ? newTaskCategoryId : null,
             };
 
-            addTask(updatedTask);
+            if (!addTask(updatedTask).ok) return;
             setNewTasks("");
-            if (activeView.type === 'completed' || activeView.type === 'deleted') setActiveView({ type: 'all' });
+            if (activeView.type === 'completed' || activeView.type === 'deleted' || activeView.type === 'reminders') setActiveView({ type: 'all' });
             else if ((activeView.type === 'category' && activeView.categoryId !== updatedTask.categoryId) ||
                 (activeView.type === 'uncategorized' && updatedTask.categoryId)) {
                 setActiveView(updatedTask.categoryId ? { type: 'category', categoryId: updatedTask.categoryId } : { type: 'uncategorized' });
@@ -212,8 +225,9 @@ function App() {
 
     function deleteCategory(id) {
         if (!categories.some(category => category.id === id)) return false;
+        const result = changeTasks(current => current.map(task => task.categoryId === id ? { ...task, categoryId: null } : task));
+        if (!result.ok) return false;
         setCategories(current => current.filter(category => category.id !== id));
-        setTodoList(current => current.map(task => task.categoryId === id ? { ...task, categoryId: null } : task));
         if (activeView.type === 'category' && activeView.categoryId === id) setActiveView({ type: 'all' });
         if (newTaskCategoryId === id) setNewTaskCategoryId('');
         showToast('delete', 'Category deleted. Tasks kept in Uncategorized ♡');
@@ -225,13 +239,45 @@ function App() {
         setSearchQuery('');
     }
 
+    useEffect(() => {
+        if (!('serviceWorker' in navigator)) return;
+        const openTask = event => {
+            if (event.data?.type !== 'OPEN_TASK' || typeof event.data.taskId !== 'string') return;
+            const task = todoList.find(item => String(item.id) === event.data.taskId);
+            setSearchQuery('');
+            setActiveView({ type: task?.deletedAt ? 'deleted' : 'all' });
+            setIsMenuOpen(false);
+            setFocusedTaskId(event.data.taskId);
+            if (!task) showToast('delete', 'This task has already been removed.');
+        };
+        navigator.serviceWorker.addEventListener('message', openTask);
+        return () => navigator.serviceWorker.removeEventListener('message', openTask);
+    }, [todoList, showToast]);
+
+    useEffect(() => {
+        if (!focusedTaskId) return;
+        const frame = window.requestAnimationFrame(() => {
+            const row = document.querySelector(`[data-task-id="${CSS.escape(focusedTaskId)}"]`);
+            if (row) {
+                row.focus({ preventScroll: true });
+                row.scrollIntoView({ block: 'center', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
+                setFocusedTaskId(null);
+                const url = new URL(window.location.href);
+                url.searchParams.delete('task');
+                window.history.replaceState(null, '', url);
+            }
+        });
+        return () => window.cancelAnimationFrame(frame);
+    }, [focusedTaskId, todoList]);
+
+    const upcomingReminders = getUpcomingReminders(todoList, reminderNow);
     const activeTasks = todoList.filter(task => !task.deletedAt);
     const deletedTasks = todoList.filter(task => task.deletedAt);
     const isDeletedView = activeView.type === 'deleted';
     const viewedCategory = activeView.type === 'category' ? categories.find(category => category.id === activeView.categoryId) : null;
-    const viewTitle = viewedCategory?.name ?? ({ all: 'Your tasks', today: 'Today', completed: 'Completed', uncategorized: 'Uncategorized', deleted: 'Deleted Tasks' }[activeView.type] ?? 'Your tasks');
+    const viewTitle = viewedCategory?.name ?? ({ all: 'Your tasks', today: 'Today', completed: 'Completed', uncategorized: 'Uncategorized', deleted: 'Deleted Tasks', reminders: 'Reminders' }[activeView.type] ?? 'Your tasks');
     const hasActiveFilters = activeView.type !== 'all' || Boolean(searchQuery.trim());
-    const visibleTasks = (isDeletedView ? deletedTasks : activeTasks).filter(todo => {
+    const visibleTasks = (isDeletedView ? deletedTasks : activeView.type === 'reminders' ? upcomingReminders : activeTasks).filter(todo => {
         if (activeView.type === 'today' && !isTaskFromToday(todo, today)) return false;
         if (activeView.type === 'completed' && !todo.completed) return false;
         if (activeView.type === 'category' && getTaskCategoryId(todo, categories) !== activeView.categoryId) return false;
@@ -244,12 +290,14 @@ function App() {
         activeView.type === 'today' ? 'No tasks added today.' :
         activeView.type === 'completed' ? 'No completed tasks yet.' :
         activeView.type === 'uncategorized' ? 'No uncategorized tasks.' :
+        activeView.type === 'reminders' ? 'No upcoming reminders. Schedule one from a task.' :
         'Task is empty! Add task above.';
 
     return(
         <>
             <Toast toasts={toasts} onDismiss={dismissToast}/>
             <PWAStatus/>
+            {storageError && <p role="alert" className="m-4 rounded-xl border border-[#D493AE] p-3 font-body text-sm text-[#823B56] dark:border-night-border dark:text-night-text">{storageError}</p>}
             <Navigation
                 isMenuOpen={isMenuOpen}
                 onToggleMenu={() => setIsMenuOpen(open => !open)}
@@ -261,6 +309,7 @@ function App() {
                 <div ref={sidebarRef} id="task-navigation" className={`${isMenuOpen ? 'block' : 'hidden'} min-w-0 lg:block`}>
                     <SideBar
                         todoList={activeTasks}
+                        upcomingReminders={upcomingReminders}
                         deletedCount={deletedTasks.length}
                         today={today}
                         categories={categories}
@@ -282,6 +331,13 @@ function App() {
                         removeTask={removeTask}
                         restoreTask={restoreTask}
                         isDeletedView={isDeletedView}
+                        isRemindersView={activeView.type === 'reminders'}
+                        deletedCount={deletedTasks.length}
+                        permanentlyDeleteTask={permanentlyDeleteTask}
+                        emptyBin={emptyBin}
+                        onSaveReminder={saveReminder}
+                        reminderDeliveryMessage={!notifications.configured ? 'Dates and reminder preferences are saved on this device. Closed-app notifications are not configured in this preview.' : !notifications.supported ? notifications.supportMessage : !notifications.enabled ? 'Enable notifications in the Reminders section to receive alerts when the app is closed.' : notifications.pending ? 'Changes are waiting to sync. Reopen this app online to finish scheduling or cancellation.' : 'Notifications are enabled for this device. Delivery depends on your connection and device settings.'}
+                        notificationSettings={<NotificationSettings notifications={notifications}/>}
                         handleToggle={handleToggle}
                         editTask={editTask}
                         handleSubmit={handleSubmit}

@@ -1,6 +1,9 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { formatTaskTimestamp } from "./taskDates";
 import { readUpdateSnapshot, useUpdateSnapshot } from "./updateSession";
+import { ConfirmDialog } from "./ConfirmDialog";
+import { ReminderEditor } from "./ReminderEditor";
+import { formatDueDate, getReminderTime } from "./reminders";
 
 function EditableTaskText({ todo, editTask, headingRef }) {
     const restoredEdit = readUpdateSnapshot(`edit:${todo.id}`);
@@ -87,22 +90,56 @@ export function TaskSection({
     handleToggle,
     editTask,
     isDeletedView = false,
+    isRemindersView = false,
+    deletedCount = 0,
     restoreTask,
+    permanentlyDeleteTask,
+    emptyBin,
+    onSaveReminder,
+    reminderDeliveryMessage,
+    notificationSettings,
     viewTitle = "Tasks",
     emptyMessage,
     hasActiveFilters = false,
     onClearFilters,
     headingRef,
 }) {
+    const restoredReminder = readUpdateSnapshot("reminder-selection");
+    const [reminderTaskId, setReminderTaskId] = useState(() => restoredReminder?.taskId ?? null);
+    const [confirmation, setConfirmation] = useState(null);
+    const modalTriggerRef = useRef(null);
+    const reminderTask = !isDeletedView ? todoList.find(task => task.id === reminderTaskId && !task.deletedAt) : null;
+    useUpdateSnapshot("reminder-selection", () => ({ taskId: reminderTaskId }), Boolean(reminderTask));
+
+    function restoreModalFocus() {
+        window.requestAnimationFrame(() => {
+            if (modalTriggerRef.current?.isConnected) modalTriggerRef.current.focus({ preventScroll: true });
+            else headingRef?.current?.focus({ preventScroll: true });
+        });
+    }
+
+    function closeReminder() {
+        setReminderTaskId(null);
+        restoreModalFocus();
+    }
+
+    function closeConfirmation() {
+        setConfirmation(null);
+        restoreModalFocus();
+    }
 
     const listItems = todoList.map(todo => {
         const formattedTimestamp = formatTaskTimestamp(isDeletedView ? { createdAt: todo.deletedAt } : todo, today);
         const timestampLabel = isDeletedView
             ? (formattedTimestamp ? `Deleted ${formattedTimestamp}` : "Deleted earlier")
             : formattedTimestamp;
+        const dueLabel = !isDeletedView ? formatDueDate(todo.dueAt) : "";
+        const reminderTime = !isDeletedView ? getReminderTime(todo) : null;
+        const reminderLabel = Number.isFinite(reminderTime) ? formatDueDate(new Date(reminderTime).toISOString()) : "";
+        const hasSchedule = Boolean(dueLabel || todo.reminder?.enabled);
 
         return (
-        <li key={todo.id} className="bg-white dark:bg-night-card dark:border-night-border rounded-xl p-2.5 border border-[#d392a7c7] shadow-xxs mb-2 lg:rounded-3xl lg:p-2 lg:pt-4">
+        <li key={todo.id} data-task-id={String(todo.id)} tabIndex={-1} className="bg-white dark:bg-night-card dark:border-night-border rounded-xl p-2.5 border border-[#d392a7c7] shadow-xxs mb-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#A85F80] dark:focus-visible:outline-night-primary lg:rounded-3xl lg:p-2 lg:pt-4">
             <div className="flex justify-between items-center gap-2 lg:mx-4">
                 <div className="flex min-w-0 flex-1 items-center gap-2">
                     {isDeletedView ? (
@@ -119,6 +156,19 @@ export function TaskSection({
                             <EditableTaskText todo={todo} editTask={editTask} headingRef={headingRef}/>
                         )}
                         <span className="mt-0.5 block text-[10px] font-itim text-[#eeb9cc] dark:text-night-muted min-[375px]:text-xs lg:hidden">{timestampLabel}</span>
+                        {!isDeletedView && (
+                            <div className="mt-1 min-w-0 font-body text-[10px] text-[#A3637C] [overflow-wrap:anywhere] dark:text-night-muted min-[375px]:text-xs">
+                                {dueLabel && <p>Due {dueLabel}</p>}
+                                {reminderLabel && <p>Reminder {reminderLabel}</p>}
+                                <button type="button" aria-label={`${hasSchedule ? "Edit reminder for" : "Schedule reminder for"} ${todo.task}`} onClick={event => {
+                                    modalTriggerRef.current = event.currentTarget;
+                                    setReminderTaskId(todo.id);
+                                }} className="inline-flex min-h-7 max-w-full cursor-pointer items-center gap-1 rounded-lg px-1 py-1 text-left hover:bg-[#FFF0F5] dark:hover:bg-night-hover">
+                                    <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="size-3 shrink-0"><circle cx="10" cy="11" r="7"/><path d="M10 7v4l3 2M7 1h6M10 1v3"/></svg>
+                                    <span>{hasSchedule ? "Edit reminder" : "Schedule reminder"}</span>
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
             
@@ -140,6 +190,17 @@ export function TaskSection({
             </button>
             </div>
                 <span className="hidden text-[#eeb9cc] dark:text-night-muted text-xs font-itim lg:inline lg:px-12">{timestampLabel}</span>
+                {isDeletedView && (
+                    <div className="mt-1 flex justify-end lg:mx-4">
+                        <button type="button" aria-label={`Delete ${todo.task} permanently`} onClick={event => {
+                            modalTriggerRef.current = event.currentTarget;
+                            setConfirmation({ type: "task", id: todo.id, name: todo.task });
+                        }} className="inline-flex min-h-8 max-w-full cursor-pointer items-center gap-1 rounded-full border border-[#F6C3D5] bg-[#FFF0F5] px-3 py-1 font-body text-xs text-[#A3637C] hover:bg-[#FFE3EE] dark:border-night-control-border dark:bg-night-soft dark:text-night-soft-ink dark:hover:bg-night-hover">
+                            <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="size-3.5 shrink-0"><path d="M3 6h14M7 6V3h6v3M5 6l1 11h8l1-11M8 9v5M12 9v5"/></svg>
+                            Delete permanently
+                        </button>
+                    </div>
+                )}
         </li>
         
         
@@ -159,8 +220,15 @@ export function TaskSection({
                         <button type="button" onClick={onClearFilters} className="min-h-9 shrink-0 cursor-pointer rounded-full border border-[#F6C3D5] bg-[#FFF0F5] px-3 py-1 font-body text-xs font-semibold text-[#C17694] transition-colors hover:bg-[#FFE3EE] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#A85F80] dark:border-night-control-border dark:bg-night-soft dark:text-night-soft-ink dark:hover:bg-night-hover dark:focus-visible:outline-night-primary">Show all</button>
                     )}
                 </div>
+                {isRemindersView && notificationSettings}
                 {isDeletedView && (
-                    <p className="mb-3 font-body text-xs text-[#a3637c] dark:text-night-muted">Restore a task to bring it back to your list.</p>
+                    <div className="mb-3 flex items-start justify-between gap-2">
+                        <p className="min-w-0 flex-1 font-body text-xs text-[#a3637c] dark:text-night-muted">Restore a task to bring it back to your list.</p>
+                        {deletedCount > 0 && <button type="button" onClick={event => {
+                            modalTriggerRef.current = event.currentTarget;
+                            setConfirmation({ type: "bin" });
+                        }} className="min-h-9 shrink-0 cursor-pointer rounded-full border border-[#F6C3D5] bg-[#FFF0F5] px-3 py-1 font-body text-xs font-semibold text-[#A3637C] hover:bg-[#FFE3EE] dark:border-night-control-border dark:bg-night-soft dark:text-night-soft-ink dark:hover:bg-night-hover">Empty Bin</button>}
+                    </div>
                 )}
                 {!isDeletedView && (
                 <form onSubmit={handleSubmit}>
@@ -187,6 +255,16 @@ export function TaskSection({
                     </ul>
                 </div>
             </div>
+            {reminderTask && <ReminderEditor key={reminderTask.id} task={reminderTask} onSave={patch => onSaveReminder(reminderTask.id, patch)} onClose={closeReminder} deliveryMessage={reminderDeliveryMessage}/>}
+            {confirmation && <ConfirmDialog
+                title={confirmation.type === "bin" ? "Empty Deleted Tasks?" : "Delete task permanently?"}
+                description={confirmation.type === "bin"
+                    ? `Permanently delete all ${deletedCount} ${deletedCount === 1 ? "task" : "tasks"} in Deleted Tasks, including any hidden by search? This cannot be undone.`
+                    : `Permanently delete “${confirmation.name}”? This cannot be undone.`}
+                confirmLabel={confirmation.type === "bin" ? "Empty bin permanently" : "Delete permanently"}
+                onConfirm={() => confirmation.type === "bin" ? emptyBin() : permanentlyDeleteTask(confirmation.id)}
+                onClose={closeConfirmation}
+            />}
         </>
     )
 }
